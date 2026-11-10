@@ -1,0 +1,2467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>无忧配送商家端 · 交互原型</title>
+<style>
+  :root {
+    --bg:#F7F8FA; --card:#FFFFFF; --border:#EAECF0;
+    --primary:#2563EB; --primary-2:#3B82F6; --primary-bg:#EAF1FF;
+    --text:#1D2939; --text2:#667085; --text3:#98A2B3;
+    --success:#16A34A; --success-bg:#E8F7EE;
+    --fail:#dc2626; --fail-bg:#fee2e2;
+    --warn:#d97706; --warn-bg:#fef3c7;
+    --series-1:#2563eb; --series-2:#eb6834;
+    --ink-muted:#898781; --grid:#e1e0d9; --axis:#c3c2b7;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:"PingFang SC","Microsoft YaHei",-apple-system,sans-serif;
+    background:#dfe3ea; color:var(--text); padding:24px; line-height:1.5;
+  }
+  .prototype-note {
+    max-width:420px; margin:0 auto 16px; background:#eef2ff; border:1px solid #c7d2fe;
+    border-radius:8px; padding:12px 16px; color:#3730a3; font-size:13px;
+  }
+  .prototype-note strong { display:block; margin-bottom:4px; }
+  .prototype-note ul { margin:4px 0 0 18px; }
+  .prototype-note li { margin:2px 0; }
+
+  .app {
+    position:relative; width:390px; height:844px; margin:0 auto; background:var(--bg);
+    border-radius:36px; overflow:hidden;
+    box-shadow:0 0 0 1px #d7dbe0, 0 8px 30px rgba(0,0,0,0.12);
+  }
+
+  /* 页面系统 */
+  .page { position:absolute; inset:0; background:var(--bg); overflow-y:auto; display:none; }
+  .page.active { display:block; }
+  .page.tab-page { padding-bottom:72px; }
+
+  /* 状态栏 / 导航栏 / 胶囊 */
+  .statusbar {
+    height:40px; padding:0 20px; display:flex; align-items:center; justify-content:space-between;
+    font-size:13px; font-weight:600; color:#111;
+  }
+  .statusbar .time { font-size:14px; }
+  .statusbar .icons { display:flex; align-items:center; gap:5px; color:#111; }
+  .navbar {
+    position:relative; height:44px; display:flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:600; color:#111;
+  }
+  .navbar .back {
+    position:absolute; left:12px; top:0; height:44px; display:flex; align-items:center;
+    font-size:22px; color:#111; cursor:pointer;
+  }
+  .navbar .capsule {
+    position:absolute; right:12px; top:7px; height:30px; width:86px;
+    border:1px solid rgba(0,0,0,0.12); border-radius:15px; background:rgba(255,255,255,0.6);
+    display:flex; align-items:center; justify-content:center; gap:14px;
+  }
+  .navbar .capsule::before {
+    content:''; position:absolute; left:50%; top:8px; bottom:8px; width:1px; background:rgba(0,0,0,0.15);
+  }
+  .navbar .capsule .dot3 { font-size:14px; line-height:1; color:#111; }
+  .navbar .capsule .ring { width:15px; height:15px; border:1.5px solid #111; border-radius:50%; }
+
+  .content { padding:4px 16px 20px; }
+
+  /* 登录页 */
+  .login-wrap { height:calc(100% - 40px); display:flex; flex-direction:column; }
+  .login-hero { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-bottom:48px; }
+  .login-logo { width:96px; height:96px; border-radius:22px; object-fit:contain; box-shadow:0 10px 24px rgba(37,99,235,0.28); }
+  .login-name { font-size:22px; font-weight:700; margin-top:18px; }
+  .login-bottom { padding:0 28px 44px; }
+  .login-agree { display:flex; align-items:center; justify-content:center; gap:7px; font-size:12px; color:var(--text2); margin-bottom:18px; cursor:pointer; }
+  .login-agree a { color:var(--primary); }
+  .agree-dot { width:16px; height:16px; border-radius:50%; border:1.5px solid var(--text3); position:relative; flex:none; background:#fff; }
+  .agree-dot.on { border-color:#07C160; background:#07C160; }
+  .agree-dot.on::after { content:""; position:absolute; left:5px; top:2px; width:4px; height:8px; border:solid #fff; border-width:0 1.5px 1.5px 0; transform:rotate(45deg); }
+  .wx-btn { display:flex; align-items:center; justify-content:center; gap:8px; background:#07C160; color:#fff; border-radius:999px; padding:13px 0; font-size:16px; font-weight:600; cursor:pointer; }
+  .wx-btn:active { opacity:0.85; }
+
+  /* 底部 TabBar */
+  .tabbar {
+    position:absolute; left:0; right:0; bottom:0; height:56px; background:#fff;
+    border-top:1px solid var(--border); display:none; z-index:20;
+  }
+  .tab {
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:4px; font-size:14px; color:var(--text3); cursor:pointer;
+  }
+  .tab svg { width:24px; height:24px; }
+  .tab.active { color:var(--primary); }
+
+  /* 底部 Home Indicator（iPhone 14/15 模拟器安全区） */
+  .home-indicator {
+    position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
+    width:134px; height:5px; border-radius:3px; background:rgba(0,0,0,0.85);
+    z-index:40; pointer-events:none;
+  }
+
+  /* 板块标题（数据 / 首页） */
+  .dsec-head { display:flex; align-items:baseline; margin:6px 0 10px; }
+  .dsec-title { font-size:14px; font-weight:600; }
+  .dsec-sub { font-size:11px; color:var(--text3); margin-left:8px; font-weight:400; }
+
+  /* chips 筛选 */
+  .chips { display:flex; gap:6px; overflow-x:auto; padding-bottom:2px; }
+  .chip {
+    flex:none; padding:6px 14px; border:1px solid var(--border); border-radius:999px;
+    font-size:12px; color:var(--text2); background:#fff; white-space:nowrap; cursor:pointer;
+  }
+  .chip.active { background:#eff6ff; color:var(--primary); border-color:var(--primary); font-weight:500; }
+
+  /* 历史营业数据指标 Tab（等宽分段，不横向滚动） */
+  .chips.seg { display:flex; gap:0; overflow:hidden; padding-bottom:0; border:1px solid var(--border); border-radius:10px; background:#fff; }
+  .chips.seg .chip { flex:1; padding:7px 2px; text-align:center; border:none; border-radius:0; border-right:1px solid var(--border); }
+  .chips.seg .chip:last-child { border-right:none; }
+
+  /* 指标卡 KPI */
+  .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .stat-tile { border:1px solid var(--border); border-radius:12px; background:#fff; padding:12px 14px 11px; }
+  .stat-tile .st-label { font-size:12px; color:var(--text2); display:flex; align-items:center; }
+  .stat-tile .st-value { font-size:22px; font-weight:700; margin-top:5px; letter-spacing:0.2px; font-variant-numeric:tabular-nums; }
+  .stat-tile .st-value .unit { font-size:13px; font-weight:500; color:var(--text2); margin-left:1px; }
+  .stat-tile .st-delta { font-size:11px; margin-top:4px; }
+  .st-delta.up { color:var(--success); }
+  .st-delta.down { color:var(--fail); }
+  .st-delta.flat { color:var(--text3); }
+  .st-delta .arrow { font-weight:700; }
+
+  .qmark {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:14px; height:14px; border-radius:50%; border:1px solid #c3c2b7; color:var(--text3);
+    font-size:10px; line-height:1; margin-left:5px; cursor:help; flex:none; position:relative;
+  }
+  .qmark:hover::after {
+    content:attr(data-tip); position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+    background:#1f2937; color:#fff; font-size:11px; padding:6px 9px; border-radius:6px;
+    white-space:nowrap; z-index:10; line-height:1.5; font-weight:400;
+  }
+
+  /* 图表卡片 */
+  .chart-card { border:1px solid var(--border); border-radius:12px; background:#fff; padding:14px 14px 10px; margin-top:12px; }
+  .chart-card-head { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px; }
+  .chart-title { font-size:14px; font-weight:600; }
+  .chart-sub { font-size:11px; color:var(--text3); margin-left:6px; font-weight:400; }
+  .chart-more { font-size:12px; color:var(--text2); }
+  .legend { display:flex; align-items:center; gap:14px; margin-bottom:6px; font-size:12px; color:var(--text2); }
+  .legend-item { display:flex; align-items:center; gap:5px; }
+  .legend-dot { width:9px; height:9px; border-radius:50%; flex:none; }
+  .legend-dot.s1 { background:var(--series-1); }
+  .legend-dot.s2 { background:var(--series-2); }
+  .chart { width:100%; height:auto; display:block; }
+  .grid { stroke:var(--grid); stroke-width:1; }
+  .axis { stroke:var(--axis); stroke-width:1; }
+  .area { fill:var(--series-1); opacity:0.10; }
+  .line { fill:none; stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+  .line.s1 { stroke:var(--series-1); }
+  .line.s2 { stroke:var(--series-2); }
+  .pt { fill:#fff; }
+  .pt.s1 { stroke:var(--series-1); }
+  .pt.s2 { stroke:var(--series-2); }
+  .enddot { fill:var(--series-1); }
+  .ring { fill:#fff; }
+  .ytick, .xtick { fill:var(--ink-muted); font-size:9px; }
+  .val { fill:var(--text); font-size:10px; font-weight:600; }
+  .hb-row { display:flex; align-items:center; gap:10px; padding:9px 0; }
+  .hb-row + .hb-row { border-top:1px solid #f1f3f5; }
+  .hb-name { width:92px; flex:none; font-size:13px; color:var(--text); }
+  .hb-name .cur { font-size:10px; color:var(--primary); background:#eff6ff; border-radius:4px; padding:1px 5px; margin-left:4px; }
+  .hb-track { flex:1; height:16px; background:#f1f5f9; border-radius:4px; overflow:hidden; }
+  .hb-fill { height:100%; background:var(--series-1); border-radius:0 4px 4px 0; }
+  .hb-val { width:72px; flex:none; text-align:right; font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .mini-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:4px; }
+  .mini-table th { text-align:left; font-weight:500; color:var(--text3); font-size:11px; padding:6px 4px; border-bottom:1px solid var(--border); }
+  .mini-table td { padding:8px 4px; border-bottom:1px solid #f1f3f5; }
+  .mini-table tr:last-child td { border-bottom:none; }
+  .mini-table .num { text-align:right; font-variant-numeric:tabular-nums; }
+  .mini-table .hl { color:var(--primary); font-weight:600; }
+  .footnote { font-size:11px; color:#9ca3af; text-align:center; margin-top:14px; }
+
+  /* 我的页 */
+  .mine-header {
+    position:relative; z-index:1;
+    background:linear-gradient(165deg,#1d4ed8 0%,#2563eb 55%,#3b82f6 100%);
+    padding:0 16px 72px; border-radius:0 0 22px 22px; color:#fff;
+  }
+  .mine-header .statusbar { color:#fff; }
+  .mine-header .statusbar .icons { color:#fff; }
+  .mine-nav { color:#fff !important; }
+  .mine-nav .capsule { border-color:rgba(255,255,255,0.45); background:rgba(255,255,255,0.18); }
+  .mine-nav .capsule::before { background:rgba(255,255,255,0.45); }
+  .mine-nav .capsule .dot3 { color:#fff; }
+  .mine-nav .capsule .ring { border-color:#fff; }
+  .profile { display:flex; align-items:center; gap:12px; margin-top:8px; }
+  .avatar {
+    width:56px; height:56px; border-radius:50%; flex:none;
+    background:rgba(255,255,255,0.22); border:2px solid rgba(255,255,255,0.6);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .pinfo { flex:1; min-width:0; }
+  .pname { font-size:18px; font-weight:700; }
+  .profile-action { flex:none; display:flex; align-items:center; gap:3px; font-size:12px; color:#fff; opacity:0.95; white-space:nowrap; cursor:pointer; }
+  .profile-action .arrow { font-size:14px; line-height:1; }
+  .mine-body { background:var(--bg); margin-top:-22px; padding:0 14px 30px; }
+  .mine-balance {
+    position:relative; z-index:2;
+    background:linear-gradient(135deg,#2563eb 0%,#3b82f6 55%,#60a5fa 100%);
+    border:1px solid rgba(255,255,255,0.45); border-radius:18px; padding:12px 16px 28px; color:#fff; overflow:hidden;
+    margin-top:-40px; box-shadow:0 10px 26px rgba(30,64,175,0.28);
+  }
+  .mine-balance::before { content:''; position:absolute; right:-28px; top:-34px; width:140px; height:140px; border-radius:50%; background:rgba(255,255,255,0.07); }
+  .mine-balance::after { content:''; position:absolute; left:52%; bottom:-46px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .bm-top { position:relative; z-index:1; display:flex; align-items:flex-start; justify-content:space-between; }
+  .bm-label { font-size:12px; opacity:0.9; }
+  .bm-amount { font-size:28px; font-weight:700; line-height:1.2; margin-top:0; letter-spacing:0.3px; font-variant-numeric:tabular-nums; }
+  .bm-amount .cny { font-size:15px; font-weight:600; margin-right:2px; }
+  .bm-detail { flex:none; display:flex; align-items:center; gap:2px; font-size:12px; opacity:0.92; cursor:pointer; white-space:nowrap; }
+  .bm-actions { position:absolute; right:16px; bottom:2px; z-index:2; margin-top:0; display:flex; justify-content:flex-end; }
+  .bm-recharge { flex:none; padding:5px 16px; border-radius:999px; background:rgba(255,255,255,0.95); color:var(--primary); font-size:13px; font-weight:600; cursor:pointer; }
+  .bm-divider { height:1px; background:rgba(255,255,255,0.25); margin:16px 0 12px; position:relative; z-index:1; }
+  .bm-bottom { position:relative; z-index:1; display:flex; align-items:center; gap:6px; font-size:13px; }
+  .bm-bottom .lbl { opacity:0.85; }
+  .bm-bottom .val { font-weight:600; }
+  .bm-more { margin-left:auto; font-size:12px; opacity:0.9; white-space:nowrap; }
+  .bm-info {
+    width:15px; height:15px; border-radius:50%; border:1px solid rgba(255,255,255,0.7); flex:none;
+    display:inline-flex; align-items:center; justify-content:center; font-size:10px; line-height:1;
+    cursor:help; position:relative;
+  }
+  .bm-info:hover::after {
+    content:attr(data-tip); position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+    background:#1f2937; color:#fff; font-size:11px; padding:6px 9px; border-radius:6px;
+    white-space:nowrap; z-index:10; line-height:1.5; font-weight:400;
+  }
+  .group { background:#fff; border-radius:14px; margin-top:12px; padding:4px 4px 6px; }
+  .group-head { display:flex; align-items:center; padding:12px 10px 4px; }
+  .group-head .bar { width:4px; height:14px; border-radius:2px; background:var(--primary); margin-right:8px; flex:none; }
+  .group-head .gtitle { font-size:15px; font-weight:600; }
+  .grid4 { display:grid; grid-template-columns:repeat(4,1fr); row-gap:14px; padding:8px 4px 12px; }
+  .grid-item { display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer; }
+  .grid-icon { width:44px; height:44px; border-radius:13px; flex:none; display:flex; align-items:center; justify-content:center; font-size:22px; background:#f1f5f9; }
+  .grid-label { font-size:12px; color:var(--text); }
+
+  /* 钱包余额卡 */
+  .balance-card {
+    background:linear-gradient(135deg,#2563eb 0%,#3b82f6 60%,#60a5fa 100%);
+    border-radius:16px; padding:16px 16px 14px; color:#fff; position:relative; overflow:hidden;
+  }
+  .balance-card::after { content:''; position:absolute; right:-40px; top:-40px; width:160px; height:160px; border-radius:50%; background:rgba(255,255,255,0.08); }
+  .balance-card .bl-label { font-size:13px; opacity:0.9; display:flex; align-items:center; gap:6px; }
+  .balance-card .bl-amount { font-size:36px; font-weight:700; letter-spacing:0.5px; line-height:1.15; margin:4px 0 4px; font-variant-numeric:tabular-nums; }
+  .balance-card .bl-amount .cny { font-size:18px; font-weight:600; margin-right:2px; }
+  .balance-card .bl-sub { display:flex; gap:18px; font-size:12px; opacity:0.92; margin-bottom:16px; }
+  .balance-card .bl-sub b { font-weight:600; }
+  .balance-card .bl-actions { display:flex; gap:10px; position:relative; z-index:2; }
+  .bl-btn { flex:1; text-align:center; padding:11px 0; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; }
+  .bl-btn.primary { background:#fff; color:var(--primary); }
+  .bl-btn.ghost { background:rgba(255,255,255,0.18); color:#fff; }
+  .bl-btn.small { flex:none; width:auto; padding:8px 22px; border-radius:999px; font-size:14px; }
+
+  .section-title { display:flex; align-items:center; justify-content:space-between; margin:18px 0 10px; font-size:14px; font-weight:600; }
+  .section-title .more { font-size:12px; color:var(--text2); font-weight:400; display:flex; align-items:center; cursor:pointer; }
+  .tx-preview { border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#fff; }
+  .tx-row { display:flex; align-items:center; gap:10px; padding:12px; border-bottom:1px solid #f1f3f5; font-size:13px; cursor:pointer; }
+  .tx-row:last-child { border-bottom:none; }
+  .badge-type { width:34px; height:34px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-size:15px; }
+  .badge-type.charge { background:var(--success-bg); color:var(--success); }
+  .badge-type.consume { background:#e0e7ff; color:var(--primary); }
+  .badge-type.refund { background:var(--warn-bg); color:var(--warn); }
+  .tx-row .tx-main { flex:1; min-width:0; }
+  .tx-row .tx-title { font-size:13px; }
+  .tx-row .tx-meta { font-size:11px; color:var(--text3); margin-top:2px; }
+  .tx-row .tx-amt { font-weight:600; font-variant-numeric:tabular-nums; }
+  .tx-amt.in { color:var(--success); }
+  .tx-amt.out { color:var(--text); }
+  .tx-amt.refund { color:var(--warn); }
+  .tx-amt.unfreeze { color:var(--text2); }
+
+  /* 门店列表 */
+  .sheet { border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-top:8px; background:#fff; }
+  .sheet-head { padding:12px; text-align:center; font-size:14px; font-weight:600; border-bottom:1px solid var(--border); }
+  /* 发货门店管理 */
+  .store-mgmt-item { display:flex; align-items:center; gap:12px; padding:14px 12px; border-bottom:1px solid #f1f3f5; cursor:pointer; }
+  .store-mgmt-item:last-child { border-bottom:none; }
+  .smi-main { flex:1; min-width:0; }
+  .smi-name { font-size:14px; font-weight:600; }
+  .smi-sub { font-size:11px; color:var(--text2); margin-top:4px; line-height:1.6; }
+  .smi-copy { color:var(--primary); margin-left:8px; cursor:pointer; }
+  .smi-chevron { color:var(--text3); font-size:16px; flex:none; }
+  .store-footer { position:absolute; left:0; right:0; bottom:0; z-index:20; padding:12px; background:#fff; border-top:1px solid var(--border); }
+  .store-add-btn { width:100%; padding:13px 0; text-align:center; background:var(--primary); color:#fff; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; }
+  #pg-store .content, #pg-store-add .content, #pg-store-edit .content, #pg-send .content, #pg-address-book .content { padding-bottom:80px; }
+
+  /* 门店表单（新增 / 编辑） */
+  .store-form { border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#fff; }
+  .sf-row { display:flex; align-items:center; gap:12px; padding:14px 12px; border-bottom:1px solid #f1f3f5; }
+  .sf-row:last-child { border-bottom:none; }
+  .sf-label { flex:none; font-size:14px; color:var(--text); display:flex; align-items:center; }
+  .sf-label .req { color:var(--fail); margin-left:2px; }
+  .sf-input { flex:1; min-width:0; border:none; outline:none; background:transparent; font-size:14px; color:var(--text); text-align:right; }
+  .sf-input::placeholder { color:var(--text3); }
+  .sf-select { -webkit-appearance:none; appearance:none; cursor:pointer; text-align:right; text-align-last:right; }
+  .sf-chevron { color:var(--text3); font-size:12px; flex:none; }
+  .store-submit { width:100%; height:56px; display:flex; align-items:center; justify-content:center; background:var(--primary); color:#fff; border-radius:16px; font-size:19px; font-weight:600; cursor:pointer; box-shadow:0 2px 8px rgba(37,99,235,0.18); letter-spacing:2px; }
+  .store-tip { font-size:11px; color:var(--text3); margin-top:12px; text-align:center; line-height:1.6; }
+  .sf-picker-row { cursor:pointer; }
+  .cat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding-top:4px; }
+  .cat-item { text-align:center; padding:12px 0; border:1px solid var(--border); border-radius:8px; font-size:13px; color:var(--text); background:#fff; cursor:pointer; }
+  .cat-item.active { border-color:var(--primary); background:#eff6ff; color:var(--primary); font-weight:500; }
+
+  /* 发单（取货 / 收货地址） */
+  .addr-card { background:var(--card); border:1px solid var(--border); border-radius:16px; margin-top:16px; overflow:hidden; }
+  .addr-row { display:flex; align-items:center; gap:12px; padding:0 14px; height:60px; cursor:pointer; transition:background .15s; }
+  .addr-row:active { background:#f5f8ff; }
+  .addr-dot { position:relative; flex:none; width:18px; height:18px; border-radius:50%; box-sizing:border-box; }
+  .addr-dot.pickup { background:#fff; box-shadow: inset 0 0 0 2.5px var(--success); }
+  .addr-dot.pickup::after { content:''; position:absolute; left:50%; top:100%; transform:translateX(-50%); width:2px; height:42px; background:#D4DAE2; }
+  .addr-dot.deliver { background:var(--primary); }
+  .addr-dot.deliver::before { content:''; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:6px; height:6px; border-radius:50%; background:#fff; }
+  .addr-text { flex:1; min-width:0; font-size:17px; font-weight:500; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .addr-book-btn { flex:none; font-size:15px; color:var(--primary); cursor:pointer; white-space:nowrap; }
+  .addr-book-btn::after { content:'›'; margin-left:2px; }
+
+  /* 首页下单：物品信息 / 上门时间 / 备注 */
+  .info-card { background:var(--card); border:1px solid var(--border); border-radius:16px; margin-top:20px; overflow:hidden; }
+  .info-row { display:flex; align-items:center; gap:12px; padding:0 14px; height:64px; border-bottom:1px solid var(--border); }
+  .info-row:last-child { border-bottom:none; }
+  .info-row.clickable { cursor:pointer; transition:background .15s; }
+  .info-row.clickable:active { background:#f5f8ff; }
+  .info-label { flex:none; font-size:17px; font-weight:500; color:#374151; }
+  .info-value { flex:1; min-width:0; text-align:right; font-size:16px; font-weight:400; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .info-value.placeholder { color:var(--text3); }
+  .info-chevron { flex:none; color:#A6B2C6; font-size:13px; }
+  .info-input { flex:1; min-width:0; border:none; outline:none; background:transparent; font-size:16px; color:var(--text); text-align:right; }
+  .info-input::placeholder { color:var(--text3); }
+
+  /* 物品信息弹窗 */
+  .goods-cat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding-top:4px; }
+  .goods-cat-item { text-align:center; padding:12px 0; border:1px solid var(--border); border-radius:8px; font-size:13px; color:var(--text); background:#fff; cursor:pointer; }
+  .goods-cat-item.active { border-color:var(--primary); background:#eff6ff; color:var(--primary); font-weight:500; }
+  .weight-head { display:flex; align-items:center; justify-content:space-between; margin:16px 0 12px; }
+  .weight-head .drawer-label { margin-bottom:0; }
+  .weight-val { font-size:16px; font-weight:700; color:var(--primary); font-variant-numeric:tabular-nums; }
+  .weight-val-wrap { display:inline-flex; align-items:center; gap:3px; }
+  .weight-arrow { font-size:14px; font-weight:700; color:var(--text3); line-height:1; }
+  .weight-slider { padding:0 2px; }
+  .weight-slider input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:24px; background:transparent; outline:none; }
+  .weight-slider input[type=range]::-webkit-slider-runnable-track { height:6px; border-radius:3px; background:var(--track, #e5e7eb); }
+  .weight-slider input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:24px; height:24px; border-radius:50%; background:#fff; border:2px solid var(--primary); box-shadow:0 1px 4px rgba(0,0,0,0.15); cursor:pointer; margin-top:-9px; }
+  .weight-slider input[type=range]::-moz-range-track { height:6px; border-radius:3px; background:#e5e7eb; }
+  .weight-slider input[type=range]::-moz-range-progress { height:6px; border-radius:3px; background:var(--primary); }
+  .weight-slider input[type=range]::-moz-range-thumb { width:24px; height:24px; border-radius:50%; background:#fff; border:2px solid var(--primary); cursor:pointer; }
+  .weight-scale { display:flex; justify-content:space-between; font-size:11px; color:var(--text3); margin-top:8px; }
+
+  /* 物品信息弹窗：类别区独立滚动 + 重量点击直接输入 */
+  #goodsMask .drawer { display:flex; flex-direction:column; overflow:hidden; }
+  #goodsMask .goods-cat-grid { flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  #goodsMask .drawer-head,
+  #goodsMask .drawer > .drawer-label,
+  #goodsMask .weight-head,
+  #goodsMask .weight-slider,
+  #goodsMask .drawer-foot { flex:none; }
+  .weight-val-wrap { cursor:pointer; }
+  .weight-input { display:none; width:76px; padding:4px 8px; border:1px solid var(--primary); border-radius:8px; font-size:16px; font-weight:700; color:var(--primary); text-align:center; outline:none; background:#fff; font-variant-numeric:tabular-nums; }
+  .weight-input.show { display:inline-block; }
+  .weight-val-wrap.hide { display:none; }
+  .weight-input::-webkit-outer-spin-button, .weight-input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+
+  /* 上门时间弹窗 */
+  .time-list { padding-top:4px; }
+  .time-opt { display:flex; align-items:center; gap:10px; padding:13px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; color:var(--text); cursor:pointer; margin-bottom:8px; background:#fff; }
+  .time-opt:last-child { margin-bottom:0; }
+  .time-opt .radio { width:16px; height:16px; border-radius:50%; border:1.5px solid var(--border); flex:none; position:relative; }
+  .time-opt.active { border-color:var(--primary); background:#eff6ff; color:var(--primary); font-weight:500; }
+  .time-opt.active .radio { border-color:var(--primary); }
+  .time-opt.active .radio::after { content:""; position:absolute; inset:3px; border-radius:50%; background:var(--primary); }
+
+  /* 地址簿 */
+  .addr-item { display:flex; align-items:center; gap:12px; padding:14px 12px; border-bottom:1px solid #f1f3f5; cursor:pointer; }
+  .addr-item:last-child { border-bottom:none; }
+  .addr-main { flex:1; min-width:0; }
+  .addr-name { font-size:14px; font-weight:600; }
+  .addr-phone { font-weight:400; color:var(--text2); font-size:13px; margin-left:8px; }
+  .addr-addr { font-size:12px; color:var(--text2); margin-top:4px; line-height:1.5; }
+  .addr-op { display:flex; align-items:center; gap:14px; flex:none; }
+  .addr-op span { font-size:12px; color:var(--text2); cursor:pointer; }
+  .addr-op .del { color:var(--fail); }
+
+  /* 地址表单：标签 + 开关 */
+  .sf-tags { display:flex; gap:8px; margin-left:auto; }
+  .sf-tag { padding:5px 14px; border:1px solid var(--border); border-radius:999px; font-size:13px; color:var(--text2); cursor:pointer; }
+  .sf-tag.active { border-color:var(--primary); color:var(--primary); background:#eff6ff; }
+  .sf-switch { width:44px; height:24px; border-radius:999px; background:#e5e7eb; position:relative; cursor:pointer; flex:none; margin-left:auto; transition:background .2s; }
+  .sf-switch::after { content:''; position:absolute; left:2px; top:2px; width:20px; height:20px; border-radius:50%; background:#fff; transition:left .2s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+  .sf-switch.on { background:var(--primary); }
+  .sf-switch.on::after { left:22px; }
+
+  /* 首页下单页（图1） */
+  .map-area { position:relative; height:98px; margin-top:12px; border-radius:18px; overflow:hidden; background:linear-gradient(160deg,#eef4fb 0%,#e4edf7 48%,#dce8f3 100%); border:1px solid var(--border); }
+  .map-area::before { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(37,99,235,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,0.035) 1px,transparent 1px); background-size:40px 40px; }
+  .map-pin { position:absolute; left:50%; top:56%; transform:translate(-50%,-100%); display:flex; flex-direction:column; align-items:center; }
+  .map-pin .pin-tag { margin-top:4px; background:#fff; border:none; border-radius:6px; padding:3px 10px; font-size:12px; font-weight:600; color:var(--text); box-shadow:0 2px 6px rgba(16,24,40,0.08); white-space:nowrap; }
+  .map-hint { position:absolute; left:10px; bottom:8px; display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.92); border-radius:999px; padding:5px 11px; font-size:12px; color:var(--text2); box-shadow:0 2px 6px rgba(16,24,40,0.06); }
+  .map-hint::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--success); flex:none; }
+  .svc-tabs { display:flex; gap:8px; margin-top:12px; }
+  .svc-tab { flex:1; text-align:center; padding:9px 0; background:#fff; border:1px solid var(--border); border-radius:10px; font-size:13px; color:var(--text2); cursor:pointer; }
+  .svc-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); font-weight:600; }
+  .goods-row { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .goods-chip { padding:7px 13px; background:#fff; border:1px solid var(--border); border-radius:999px; font-size:12px; color:var(--text); cursor:pointer; }
+  .goods-chip.active { border-color:var(--primary); color:var(--primary); background:#eff6ff; }
+  .discount { display:flex; align-items:center; gap:10px; margin-top:12px; padding:12px; background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; }
+  .discount .d-tag { background:#f97316; color:#fff; font-size:11px; padding:3px 8px; border-radius:6px; flex:none; font-weight:600; }
+  .discount .d-main { flex:1; min-width:0; }
+  .discount .d-title { font-size:13px; font-weight:600; color:#c2410c; }
+  .discount .d-sub { font-size:11px; color:var(--text2); margin-top:2px; }
+  .discount .d-btn { flex:none; background:#f97316; color:#fff; font-size:12px; padding:6px 13px; border-radius:999px; cursor:pointer; }
+  .provider-head { display:flex; align-items:center; justify-content:space-between; margin-top:14px; }
+  .provider-head .ph-title { font-size:13px; font-weight:600; }
+  .provider-head .ph-sub { font-size:11px; color:var(--text3); }
+  .provider-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:10px; }
+  .provider { display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 6px; background:#fff; border:1px solid var(--border); border-radius:10px; cursor:pointer; }
+  .provider .pv-logo { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; }
+  .provider .pv-name { font-size:11px; color:var(--text); }
+
+  /* 填写取送信息（图2） */
+  .rec-title { font-size:11px; color:var(--text3); margin:14px 0 8px; }
+  .rec-row { display:flex; gap:8px; }
+  .rec-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 0; background:#fff; border:1px solid var(--border); border-radius:10px; font-size:12px; color:var(--text); cursor:pointer; }
+  .rec-item .rec-ic { font-size:18px; }
+  .common-addr { border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#fff; margin-top:14px; }
+  .common-addr .ca-head { padding:11px 12px; font-size:13px; font-weight:600; border-bottom:1px solid #f1f3f5; }
+  .ca-item { display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid #f1f3f5; }
+  .ca-item:last-child { border-bottom:none; }
+  .ca-item .ca-main { flex:1; min-width:0; overflow:hidden; }
+  .ca-item .ca-name { font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ca-item .ca-phone { font-weight:400; color:var(--text2); font-size:12px; margin-left:6px; }
+  .ca-item .ca-addr { font-size:11px; color:var(--text2); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ca-item .ca-btn { flex:none; color:var(--primary); font-size:12px; border:1px solid var(--primary); border-radius:999px; padding:5px 12px; cursor:pointer; background:#fff; white-space:nowrap; }
+
+  /* 保存到常用地址（圆圈开关） */
+  .save-addr { display:flex; align-items:center; gap:8px; margin-top:14px; padding:0 2px; font-size:14px; color:var(--text); cursor:pointer; }
+  .save-circle { width:18px; height:18px; border-radius:50%; border:1.5px solid var(--text3); background:#fff; flex:none; position:relative; transition:border-color .2s; }
+  .save-addr.on .save-circle { border-color:var(--primary); }
+  .save-addr.on .save-circle::after { content:""; position:absolute; inset:3px; border-radius:50%; background:var(--primary); }
+
+  /* 充值 */
+  .recharge-title { font-size:13px; color:var(--text2); margin:4px 0 10px; }
+  .presets { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .preset { padding:14px 0; text-align:center; border:1px solid var(--border); border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; background:#fff; }
+  .preset.active { border-color:var(--primary); background:#eff6ff; color:var(--primary); }
+  .preset-input { display:flex; align-items:center; justify-content:center; gap:2px; padding:14px 0; border:1px dashed var(--border); border-radius:10px; background:#fafbfc; }
+  .preset-input input { width:100%; border:none; outline:none; background:transparent; text-align:center; font-size:12px; color:var(--text2); }
+  .preset-input input::-webkit-outer-spin-button, .preset-input input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .preset-input input::placeholder { color:var(--text3); }
+  .pay-btn { width:100%; padding:14px 0; text-align:center; background:var(--success); color:#fff; border-radius:12px; font-size:16px; font-weight:600; margin-top:6px; cursor:pointer; }
+  .pay-method { margin-top:18px; }
+  .pay-method .pm-title { font-size:13px; color:var(--text2); margin-bottom:8px; }
+  .pay-method .pm-item { display:flex; align-items:center; gap:12px; padding:13px 14px; border:1px solid var(--border); border-radius:10px; background:#fff; }
+  .pay-method .pm-item.selected { border-color:#07C160; background:#f0fdf4; }
+  .pay-method .pm-icon { width:28px; height:28px; border-radius:6px; flex:none; background:#07C160; display:flex; align-items:center; justify-content:center; }
+  .pay-method .pm-name { flex:1; font-size:14px; font-weight:500; }
+  .pay-method .pm-check { color:#07C160; font-weight:700; font-size:16px; }
+
+  .result { text-align:center; padding:40px 0 10px; }
+  .result .ok { width:64px; height:64px; border-radius:50%; margin:0 auto 16px; background:var(--success); color:#fff; display:flex; align-items:center; justify-content:center; font-size:34px; }
+  .result .title { font-size:18px; font-weight:700; }
+  .result .amt { font-size:30px; font-weight:700; margin-top:12px; font-variant-numeric:tabular-nums; }
+  .result .meta { font-size:12px; color:var(--text2); margin-top:6px; }
+
+  /* 资金明细筛选 + 类型标签 */
+  .filter-bar { display:flex; flex-direction:column; align-items:stretch; gap:8px; margin:4px 0 10px; }
+  .filter-time { display:flex; align-items:center; gap:4px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px; color:var(--text2); background:#fff; white-space:nowrap; }
+  .filter-select-row { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text2); }
+  .filter-select { flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px; color:var(--text); background:#fff; outline:none; }
+  .filter-trigger { display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--text2); font-weight:400; cursor:pointer; }
+  /* 筛选抽屉 */
+  .drawer-mask { position:absolute; inset:0; z-index:60; background:rgba(0,0,0,0.4); display:none; align-items:flex-end; }
+  .drawer-mask.open { display:flex; }
+  .drawer { width:100%; background:#fff; border-radius:16px 16px 0 0; padding:0 16px 18px; max-height:72%; overflow-y:auto; animation:slideUp .2s ease; }
+  @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+  .drawer-head { display:flex; align-items:center; justify-content:space-between; padding:16px 0 12px; }
+  .drawer-title { font-size:16px; font-weight:600; }
+  .drawer-close { font-size:18px; color:var(--text2); cursor:pointer; line-height:1; }
+  .drawer-field { padding:12px 0; border-top:1px solid #f1f3f5; }
+  .drawer-label { font-size:13px; color:var(--text2); margin-bottom:10px; }
+  .drawer-time { padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; color:var(--text); background:#fff; }
+  .drawer .opt { padding:9px 0; }
+  .type-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .type-btn { text-align:center; padding:10px 0; border:1px solid var(--border); border-radius:8px; font-size:13px; color:var(--text); background:#fff; cursor:pointer; }
+  .type-btn.active { border-color:var(--primary); background:var(--primary); color:#fff; font-weight:600; }
+  .time-range { display:flex; align-items:center; gap:8px; }
+  .time-input { flex:1; min-width:0; padding:9px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; color:var(--text); background:#fff; outline:none; }
+  .time-sep { color:var(--text3); font-size:12px; }
+  .tx-empty { padding:32px 0; text-align:center; font-size:13px; color:var(--text3); }
+  .drawer-foot { display:flex; gap:10px; margin-top:18px; }
+  .drawer-btn { flex:1; text-align:center; padding:12px 0; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; background:#f1f5f9; color:var(--text); }
+  .drawer-btn.primary { background:var(--primary); color:#fff; }
+  .tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:500; white-space:nowrap; vertical-align:1px; }
+  .tag-freeze { background:#f3f4f6; color:#6b7280; }
+  .tag-unfreeze { background:#f3f4f6; color:#9ca3af; }
+  .tag-deduct { background:#e0e7ff; color:var(--primary); }
+  .tag-charge { background:var(--success-bg); color:var(--success); }
+  .tag-refund { background:var(--warn-bg); color:var(--warn); }
+  .tag-delivery { background:#e0e7ff; color:var(--primary); }
+  .tag-penalty { background:var(--fail-bg); color:var(--fail); }
+
+  /* 交易详情 */
+  .tx-chevron { color:var(--text3); font-size:16px; flex:none; }
+  .tx-detail-head { text-align:center; padding:6px 0 18px; }
+  .tx-detail-amount { font-size:34px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .tx-detail-title { font-size:13px; color:var(--text2); margin-top:8px; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .tx-detail-card { border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#fff; }
+  .tx-detail-row { display:flex; align-items:flex-start; gap:12px; padding:13px 14px; border-bottom:1px solid #f1f3f5; font-size:13px; }
+  .tx-detail-row:last-child { border-bottom:none; }
+  .td-lbl { color:var(--text3); flex:none; width:76px; }
+  .td-val { color:var(--text); flex:1; min-width:0; text-align:right; word-break:break-all; }
+
+  /* 余额提醒设置 */
+  .set-group { border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#fff; margin-bottom:12px; }
+  .set-row { display:flex; align-items:center; gap:12px; padding:14px 12px; border-bottom:1px solid #f1f3f5; }
+  .set-row:last-child { border-bottom:none; }
+  .set-row .lbl { flex:1; min-width:0; font-size:14px; }
+  .set-row .lbl .sub { font-size:11px; color:var(--text3); margin-top:3px; line-height:1.5; }
+  .set-note { font-size:11px; color:var(--text3); padding:0 2px; line-height:1.6; }
+  .toggle { width:46px; height:26px; border-radius:999px; background:var(--success); position:relative; flex:none; cursor:pointer; }
+  .toggle::after { content:""; position:absolute; top:2px; right:2px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.15); }
+  .toggle.off { background:#d1d5db; }
+  .toggle.off::after { right:auto; left:2px; }
+  .th-input { display:flex; align-items:center; gap:6px; }
+  .th-input .prefix { font-size:13px; color:var(--text2); }
+  .th-input input { width:70px; border:1px solid var(--border); border-radius:8px; padding:6px 10px; text-align:right; font-size:14px; color:var(--text); outline:none; background:#fff; }
+  .th-input .unit { font-size:13px; color:var(--text2); }
+  .opt-list { display:flex; flex-direction:column; gap:4px; }
+  .opt { display:flex; align-items:center; gap:9px; padding:3px 0; font-size:14px; cursor:pointer; }
+  .opt .radio { width:16px; height:16px; border-radius:50%; border:1.5px solid var(--border); position:relative; flex:none; }
+  .opt.sel .radio { border-color:var(--primary); }
+  .opt.sel .radio::after { content:""; position:absolute; inset:3px; border-radius:50%; background:var(--primary); }
+
+  /* 消息 */
+  .msg-list { border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#fff; margin-top:6px; }
+  .msg-item { display:flex; gap:10px; padding:13px 12px; border-bottom:1px solid #f1f3f5; }
+  .msg-item:last-child { border-bottom:none; }
+  .msg-item .dot { width:8px; height:8px; border-radius:50%; background:var(--fail); flex:none; margin-top:6px; }
+  .msg-item .dot.read { background:transparent; }
+  .msg-item .m-main { flex:1; min-width:0; }
+  .msg-item .m-title { font-size:14px; font-weight:500; }
+  .msg-item .m-desc { font-size:12px; color:var(--text2); margin-top:2px; }
+  .msg-item .m-time { font-size:11px; color:var(--text3); margin-top:4px; }
+
+  /* 账号管理 */
+  .acct-top { display:flex; align-items:center; gap:12px; padding:14px 4px; }
+  .acct-top .avatar-ph { width:54px; height:54px; border-radius:50%; background:#eef2ff; color:var(--primary); display:flex; align-items:center; justify-content:center; flex:none; }
+  .acct-top .aname { font-size:17px; font-weight:700; }
+  .acct-card { border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#fff; margin-top:12px; }
+  .acct-row { display:flex; align-items:center; gap:10px; padding:14px 12px; border-bottom:1px solid #f1f3f5; font-size:14px; cursor:pointer; }
+  .acct-row:last-child { border-bottom:none; }
+  .acct-row .arow-right { margin-left:auto; color:var(--text3); font-size:13px; }
+  .acct-row.logout { color:var(--fail); justify-content:center; }
+
+  /* 关于我们 */
+  .about-wrap { display:flex; flex-direction:column; align-items:center; padding:44px 16px 24px; }
+  .about-logo { width:84px; height:84px; border-radius:20px; background:linear-gradient(160deg,var(--primary),var(--primary-2)); color:#fff; display:flex; align-items:center; justify-content:center; font-size:40px; box-shadow:0 10px 24px rgba(37,99,235,0.28); }
+  .about-name { font-size:20px; font-weight:700; margin-top:16px; }
+  .about-ver { font-size:13px; color:var(--text3); margin-top:6px; }
+  .about-desc { font-size:13px; color:var(--text2); text-align:center; line-height:1.7; margin-top:22px; max-width:260px; }
+  .about-copy { font-size:12px; color:var(--text3); text-align:center; margin-top:28px; }
+
+  /* 首页快捷入口 / 通用带边框面板 */
+  .panel { background:#fff; border:1px solid var(--border); border-radius:14px; margin-top:12px; padding:4px; }
+
+  /* 空状态 */
+  .empty { text-align:center; padding:90px 20px; color:var(--text3); font-size:13px; }
+  .empty .icon { font-size:40px; opacity:0.35; margin-bottom:10px; }
+
+  /* ===== 订单管理（首页 · 复用参考图订单页）===== */
+  .order-bar { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .ob-tools { flex:none; display:flex; align-items:center; gap:14px; }
+  .ob-ic { display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+  .order-tabs { flex:1; min-width:0; display:flex; gap:0; overflow-x:auto; padding-bottom:0; margin-bottom:0; border:1px solid var(--border); border-radius:10px; background:#fff; scrollbar-width:none; }
+  .order-tabs::-webkit-scrollbar { display:none; }
+  .order-tabs .chip { flex:none; padding:7px 13px; border:none; border-radius:0; border-right:1px solid var(--border); background:transparent; }
+  .order-tabs .chip:last-child { border-right:none; }
+  .order-tabs .chip.active { background:#eff6ff; color:var(--primary); font-weight:600; }
+  .order-tabs .chip small { font-size:11px; color:inherit; margin-left:2px; }
+  .order-card { background:#fff; border:1px solid var(--border); border-radius:12px; margin-bottom:10px; overflow:hidden; cursor:pointer; }
+  .order-card:active { opacity:.92; }
+  .oc-head { display:flex; align-items:center; gap:8px; padding:12px 12px 0; }
+  .oc-platform { display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:700; color:var(--text); }
+  .pf-ic { flex:none; width:17px; height:17px; border-radius:5px; color:#fff; font-size:10px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; }
+  .pf-mt { background:#ffb800; }
+  .pf-ele { background:#0a6cff; }
+  .pf-dy { background:#161823; }
+  .pf-jd { background:#e1251b; }
+  .oc-type { flex:none; order:2; font-size:11px; font-weight:600; color:var(--warn); background:var(--warn-bg); border-radius:4px; padding:2px 7px; }
+  .oc-time { margin-left:auto; order:1; font-size:12px; color:var(--text3); white-space:nowrap; }
+  .oc-route { display:flex; flex-direction:column; gap:6px; padding:10px 12px 0; }
+  .or-leg { display:flex; align-items:flex-start; gap:6px; }
+  .or-mark { flex:none; width:16px; height:16px; border-radius:4px; color:#fff; font-size:10px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; margin-top:1px; }
+  .or-mark.pickup { background:var(--primary); }
+  .or-mark.recv { background:#5c8ed2; }
+  .or-text { flex:1; min-width:0; font-size:13px; font-weight:600; color:var(--text); line-height:1.45; }
+  .oc-contact { display:flex; align-items:center; gap:8px; padding:10px 12px 0; }
+  .oc-name { font-size:14px; font-weight:600; color:var(--text); }
+  .oc-tail { font-size:12px; color:var(--text3); }
+  .oc-call { margin-left:auto; flex:none; width:30px; height:30px; border-radius:50%; border:none; background:#eff6ff; color:var(--primary); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+  .oc-call svg { width:15px; height:15px; }
+  .oc-note { padding:7px 12px 0; font-size:12px; color:var(--text3); font-weight:500; }
+  .oc-note.fail { color:var(--fail); }
+  .order-actions { display:flex; justify-content:flex-end; gap:8px; padding:10px 12px; }
+  .order-btn { flex:none; height:36px; padding:0 18px; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; }
+  .order-btn.secondary { background:#f1f3f5; color:var(--text2); }
+  .order-btn.primary { background:var(--primary); color:#fff; }
+  .oc-end { padding:14px 12px 6px; text-align:center; color:var(--text3); font-size:12px; }
+
+  /* ===== 订单详情 ===== */
+  .od-map { position:relative; height:150px; margin:2px 0 14px; border-radius:12px; overflow:hidden; background:#e9f0e8; border:1px solid var(--border); }
+  .od-map svg { width:100%; height:100%; display:block; }
+  .od-addr-hero { display:flex; align-items:flex-start; gap:8px; font-size:17px; font-weight:700; color:var(--text); line-height:1.45; }
+  .od-addr-hero svg { width:18px; flex:none; color:var(--primary); margin-top:3px; }
+  .od-contact { margin-top:14px; border:1px solid var(--border); border-radius:12px; background:#fff; overflow:hidden; }
+  .od-contact-row { display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid #f1f3f5; }
+  .od-contact-row:last-child { border-bottom:none; }
+  .od-contact-mark { flex:none; width:22px; height:22px; border-radius:6px; color:#fff; font-size:11px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; }
+  .od-contact-mark.send { background:var(--primary); }
+  .od-contact-mark.recv { background:#5c8ed2; }
+  .od-contact-main { flex:1; min-width:0; }
+  .od-contact-name { font-size:14px; font-weight:600; }
+  .od-contact-sub { font-size:12px; color:var(--text3); margin-top:1px; }
+  .od-contact-phone { flex:none; font-size:13px; color:var(--primary); }
+  .od-card { margin-top:12px; border:1px solid var(--border); border-radius:12px; background:#fff; overflow:hidden; }
+  .od-card-head { padding:13px 14px 0; font-size:14px; font-weight:600; }
+  .od-card-head.toggle { display:flex; align-items:center; justify-content:space-between; padding:13px 14px; cursor:pointer; }
+  .od-card-head.toggle .arrow { flex:none; color:var(--text3); transition:transform .2s; }
+  .od-card-head.toggle .arrow svg { display:block; }
+  .od-card-head.toggle.open .arrow { transform:rotate(180deg); }
+  .od-goods { padding:4px 14px 13px; font-size:13px; color:var(--text); }
+  .od-link { flex:none; font-size:12px; color:var(--primary); cursor:pointer; }
+  .od-action { margin-top:14px; display:flex; justify-content:center; }
+  .od-action .order-btn { height:42px; padding:0 44px; font-size:15px; }
+
+  /* 钱包账单：时间筛选 + 汇总统计 + 按天聚合 */
+  .wf-range { margin: 6px 0 10px; }
+  .wf-custom { display: flex; align-items: center; gap: 8px; margin: -2px 0 10px; }
+  .wf-custom input {
+    flex: 1; min-width: 0; padding: 8px 10px;
+    border: 1px solid var(--border); border-radius: 8px; font-size: 12px;
+    color: var(--text); background: #fff; outline: none;
+  }
+  .wf-custom span { font-size: 12px; color: var(--text3); }
+  .wf-summary {
+    display: flex; align-items: center; gap: 16px;
+    padding: 10px 12px; margin-bottom: 10px;
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    font-size: 12px; color: var(--text2);
+  }
+  .wf-summary b { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
+  .wf-summary .in b { color: var(--success); }
+  .wf-day { background: #fff; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+  .wf-day-head { display: flex; align-items: center; gap: 8px; padding: 11px 12px; cursor: pointer; }
+  .wf-day-head .wf-date { font-size: 12px; font-weight: 600; color: var(--text); flex: none; }
+  .wf-day-head .wf-sub { margin-left: auto; font-size: 11px; color: var(--text2); display: flex; gap: 10px; }
+  .wf-day-head .wf-sub .wf-exp { color: var(--text2); }
+  .wf-day-head .wf-sub .wf-inc { color: var(--success); }
+  .wf-day-head .wf-arrow { color: var(--text3); font-size: 14px; line-height: 1; flex: none; transition: transform .2s; }
+  .wf-day-head:not(.open) .wf-arrow { transform: rotate(-90deg); }
+  .wf-day-body { border-top: 1px solid #f1f3f5; }
+  .wf-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #f1f3f5; font-size: 13px; }
+  .wf-item:last-child { border-bottom: none; }
+  .wf-item .wf-ic { width: 30px; height: 30px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+  .wf-item .wf-ic.ic-in { background: var(--success-bg); color: var(--success); }
+  .wf-item .wf-ic.ic-out { background: #e0e7ff; color: var(--primary); }
+  .wf-item .wf-main { flex: 1; min-width: 0; }
+  .wf-item .wf-title { font-size: 13px; }
+  .wf-item .wf-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .wf-item .wf-amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .wf-item .wf-amt.in { color: var(--success); }
+  .wf-item .wf-amt.out { color: var(--text); }
+  .wf-item.tx-click { cursor: pointer; }
+  .wf-tabs { display: flex; border-bottom: 1px solid var(--border); margin: 4px 0 12px; }
+  .wf-tabs .tab-item { flex: 1; text-align: center; padding: 9px 0; font-size: 14px; color: var(--text2); cursor: pointer; position: relative; }
+  .wf-tabs .tab-item.active { color: var(--text); font-weight: 600; }
+  .wf-tabs .tab-item.active::after { content: ""; position: absolute; left: 28%; right: 28%; bottom: -1px; height: 2px; background: var(--primary); border-radius: 2px; }
+
+  /* 方案1：下单居中凸起主按钮 */
+  .tabbar.center-bar { height:62px; }
+  .tab-center { flex:1; display:flex; align-items:center; justify-content:center; }
+  .center-btn {
+    position:relative; top:-20px;
+    display:inline-flex; align-items:center; gap:4px;
+    padding:11px 20px; border-radius:999px;
+    background:var(--primary); color:#fff;
+    font-size:14px; font-weight:600;
+    box-shadow:0 8px 18px rgba(37,99,235,0.4);
+    border:3px solid #fff; cursor:pointer;
+  }
+  .center-btn svg { width:18px; height:18px; }
+  /* 下单页：纵向 Flex 布局（主内容滚动 + 底部操作区贴底，适配多屏高） */
+  #pg-send.active { display:flex; flex-direction:column; overflow:hidden; padding-bottom:62px; }
+  #pg-send .statusbar, #pg-send .navbar { flex:none; }
+  #pg-send .navbar { font-size:20px; font-weight:600; }
+  #pg-send .content { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px 16px 16px; }
+  #pg-send .store-footer { position:static; flex:none; padding:20px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background:linear-gradient(180deg, var(--bg) 0%, #fff 20px); border-top:none; }
+  #pg-send .store-submit { height:54px; border-radius:18px; font-size:20px; font-weight:700; letter-spacing:1px; box-shadow:0 2px 6px rgba(37,99,235,0.14); }
+
+  /* 充值页：底部固定「立即充值」栏 */
+  #pg-recharge.active { display:flex; flex-direction:column; overflow:hidden; }
+  #pg-recharge .statusbar, #pg-recharge .navbar { flex:none; }
+  #pg-recharge .content { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  #pg-recharge .store-footer { position:static; flex:none; padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background:#fff; border-top:1px solid var(--border); }
+  #pg-recharge .pay-btn { margin-top:0; height:52px; display:flex; align-items:center; justify-content:center; padding:0; border-radius:14px; font-size:17px; }
+
+  /* ===== 地址页：地图背景 + 底部弹层 ===== */
+  #pg-address-form { overflow:hidden; background:#e7edf5; }
+  #pg-address-form .statusbar,
+  #pg-address-form .navbar { position:relative; z-index:6; }
+  .amap { position:absolute; left:0; right:0; top:0; bottom:0; z-index:1; background:linear-gradient(160deg,#e9f0fa 0%,#dee9f6 50%,#d3e2ef 100%); overflow:hidden; }
+  .amap::before { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(37,99,235,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,0.04) 1px,transparent 1px); background-size:40px 40px; }
+  .amap-pin { position:absolute; left:50%; top:33%; transform:translate(-50%,-100%); display:flex; flex-direction:column; align-items:center; }
+  .amap-pin .amap-tag { margin-top:8px; background:#fff; border-radius:8px; padding:4px 12px; font-size:12px; font-weight:600; color:var(--text); box-shadow:0 3px 10px rgba(16,24,40,0.12); white-space:nowrap; }
+  .amap-locate { position:absolute; right:14px; top:96px; z-index:6; width:40px; height:40px; border-radius:50%; background:#fff; box-shadow:0 2px 8px rgba(16,24,40,0.14); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--primary); }
+  .amap-locate svg { width:20px; height:20px; }
+
+  .asheet { position:absolute; left:0; right:0; bottom:0; z-index:10; display:flex; flex-direction:column; background:#fff; border-radius:22px 22px 0 0; box-shadow:0 -6px 24px rgba(16,24,40,0.08); height:58%; transition:height .28s ease; }
+  .asheet.expanded { height:78%; }
+  .asheet-handle { flex:none; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .asheet-handle::before { content:''; width:40px; height:4px; border-radius:2px; background:#d8dce3; }
+  .asheet-body { flex:1; overflow-y:auto; padding:0 16px 16px; }
+  .asheet-footer { flex:none; padding:10px 16px; padding-bottom:calc(10px + env(safe-area-inset-bottom)); border-top:1px solid var(--border); background:#fff; }
+  .asheet-footer .store-submit { height:50px; font-size:17px; border-radius:12px; letter-spacing:0; }
+
+  /* 智能粘贴：收起态 */
+  .sp-entry { display:flex; align-items:center; gap:10px; padding:0 14px; height:46px; margin-top:10px; background:var(--primary-bg); border:1px solid #bfdbfe; border-radius:12px; cursor:pointer; }
+  .sp-entry .sp-ic { width:20px; height:20px; color:var(--primary); flex:none; }
+  .sp-entry .sp-txt { flex:1; font-size:14px; color:var(--primary); font-weight:500; }
+  .sp-entry .sp-arrow { color:var(--primary); font-size:16px; flex:none; }
+
+  /* 智能粘贴：展开态 */
+  .sp-panel { display:none; margin-top:12px; border:1px solid #bfdbfe; border-radius:16px; padding:14px; background:#fff; }
+  .sp-panel.open { display:block; }
+  .sp-head { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .sp-collapse { font-size:20px; color:var(--primary); cursor:pointer; width:22px; flex:none; line-height:1; }
+  .sp-head .sp-ic { width:20px; height:20px; color:var(--primary); flex:none; }
+  .sp-title { font-size:15px; font-weight:600; color:var(--primary); }
+  .sp-input { width:100%; min-height:92px; border:1px solid var(--border); border-radius:10px; padding:12px; font-size:14px; color:var(--text); resize:none; outline:none; background:#fafbfd; }
+  .sp-input::placeholder { color:var(--text3); }
+  .sp-actions { display:flex; align-items:center; gap:8px; margin-top:12px; }
+  .sp-aux { flex:1; display:flex; align-items:center; justify-content:center; gap:5px; padding:9px 0; background:#f2f4f7; border-radius:999px; font-size:13px; color:var(--text2); cursor:pointer; white-space:nowrap; }
+  .sp-aux-ic { font-size:14px; }
+  .sp-submit { flex:1; display:flex; align-items:center; justify-content:center; padding:9px 0; background:var(--primary); color:#fff; border-radius:999px; font-size:13px; font-weight:500; cursor:pointer; white-space:nowrap; }
+
+  /* 地址表单 */
+  .aform { margin-top:16px; }
+  .af-row { display:flex; align-items:center; gap:10px; min-height:56px; padding:0 2px; border-bottom:1px solid var(--border); }
+  .af-row:last-child { border-bottom:none; }
+  .af-label { flex:none; font-size:15px; font-weight:500; color:var(--text2); }
+  .af-label .req { color:var(--primary); margin-left:1px; }
+  .af-value { flex:1; min-width:0; text-align:right; font-size:15px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .af-input { flex:1; min-width:0; border:none; outline:none; background:transparent; font-size:15px; color:var(--text); text-align:right; }
+  .af-input::placeholder { color:var(--text3); }
+  .af-code { flex:none; font-size:15px; color:var(--text); }
+  .af-chevron { flex:none; color:var(--text3); font-size:14px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ 首页下单页（同城跑腿） ============ -->
+  <section class="page" id="pg-send">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar">无忧配送
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="map-area">
+        <div class="map-pin">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#2563eb" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3" fill="#fff" stroke="none"/></svg>
+          <span class="pin-tag">多宝路63号</span>
+        </div>
+        <span class="map-hint">预计1分钟内接单</span>
+      </div>
+
+      <div class="addr-card">
+        <div class="addr-row" data-go="address-form">
+          <span class="addr-dot pickup"></span>
+          <span class="addr-text">填写取货地址</span>
+          <span class="addr-book-btn" data-go="address-book">常用地址</span>
+        </div>
+        <div class="addr-row" data-go="address-book">
+          <span class="addr-dot deliver"></span>
+          <span class="addr-text" id="deliverInfo">填写收货地址</span>
+          <span class="addr-book-btn" data-go="address-book">常用地址</span>
+        </div>
+      </div>
+
+      <!-- 物品信息 / 上门时间 / 备注 -->
+      <div class="info-card">
+        <div class="info-row clickable" data-open-goods>
+          <span class="info-label">物品信息</span>
+          <span class="info-value placeholder" id="goodsValue">请选择物品类别</span>
+          <span class="info-chevron">›</span>
+        </div>
+        <div class="info-row clickable" data-open-time>
+          <span class="info-label">上门时间</span>
+          <span class="info-value" id="timeValue">今天 立即取件</span>
+          <span class="info-chevron">›</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">备注</span>
+          <input class="info-input" id="noteInput" type="text" placeholder="选填">
+        </div>
+      </div>
+
+      <!-- 8家品牌可选（暂时注释）
+      <div class="provider-head">
+        <span class="ph-title">8家品牌可选</span>
+        <span class="ph-sub">填写地址后查看价格与优惠</span>
+      </div>
+      <div class="provider-grid">
+        <div class="provider"><span class="pv-logo" style="background:#e8f0ff">🚚</span><span class="pv-name">顺丰同城</span></div>
+        <div class="provider"><span class="pv-logo" style="background:#eef7ee">🛵</span><span class="pv-name">哈啰送货</span></div>
+        <div class="provider"><span class="pv-logo" style="background:#fff1e8">🛵</span><span class="pv-name">美团跑腿</span></div>
+        <div class="provider"><span class="pv-logo" style="background:#f0f0f5">🚗</span><span class="pv-name">闪送</span></div>
+        <div class="provider"><span class="pv-logo" style="background:#e8f4f8">📦</span><span class="pv-name">达达快送</span></div>
+        <div class="provider"><span class="pv-logo" style="background:#fdf2f2">🏍</span><span class="pv-name">UU跑腿</span></div>
+        <div class="provider"><span class="pv-logo" style="background:#f3f0ff">🛵</span><span class="pv-name">蜂鸟即配</span></div>
+        <div class="provider"><span class="pv-logo" style="background:#eefbf0">🚚</span><span class="pv-name">点我达</span></div>
+      </div>
+      -->
+    </div>
+    <div class="store-footer">
+      <div class="store-submit" data-send>下单</div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：常用地址 ============ -->
+  <section class="page" id="pg-address-book">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>常用地址
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="sheet">
+        <div class="addr-item" data-addr-name="张伟" data-addr-phone="13812340000" data-addr-addr="北京市海淀区中关村大街 1 号">
+          <div class="addr-main">
+            <div class="addr-name">张伟<span class="addr-phone">13812340000</span></div>
+            <div class="addr-addr">北京市海淀区中关村大街 1 号</div>
+          </div>
+          <div class="addr-op"><span data-edit-addr>编辑</span><span class="del" data-del-addr>删除</span></div>
+        </div>
+        <div class="addr-item" data-addr-name="李娜" data-addr-phone="13912341111" data-addr-addr="北京市海淀区成府路 28 号">
+          <div class="addr-main">
+            <div class="addr-name">李娜<span class="addr-phone">13912341111</span></div>
+            <div class="addr-addr">北京市海淀区成府路 28 号</div>
+          </div>
+          <div class="addr-op"><span data-edit-addr>编辑</span><span class="del" data-del-addr>删除</span></div>
+        </div>
+        <div class="addr-item" data-addr-name="王强" data-addr-phone="13712342222" data-addr-addr="北京市海淀区知春路 56 号">
+          <div class="addr-main">
+            <div class="addr-name">王强<span class="addr-phone">13712342222</span></div>
+            <div class="addr-addr">北京市海淀区知春路 56 号</div>
+          </div>
+          <div class="addr-op"><span data-edit-addr>编辑</span><span class="del" data-del-addr>删除</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="store-footer">
+      <div class="store-add-btn" data-add-addr>新增地址</div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：填写取送信息（地图背景 + 底部弹层） ============ -->
+  <section class="page" id="pg-address-form">
+    <!-- 地图背景 -->
+    <div class="amap">
+      <div class="amap-pin">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="#2563EB" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3" fill="#fff" stroke="none"/></svg>
+        <span class="amap-tag">海珠区昌岗街道碧乐时光</span>
+      </div>
+    </div>
+
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>填写取货信息
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="amap-locate" title="定位"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
+
+    <!-- 底部弹层 -->
+    <div class="asheet" id="addrSheet">
+      <div class="asheet-handle" id="asheetHandle"></div>
+      <div class="asheet-body">
+        <!-- 智能粘贴：收起态 -->
+        <div class="sp-entry" id="smartEntry">
+          <svg class="sp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/></svg>
+          <span class="sp-txt">智能粘贴，快速填写地址</span>
+          <span class="sp-arrow">›</span>
+        </div>
+
+        <!-- 智能粘贴：展开态 -->
+        <div class="sp-panel" id="smartPanel">
+          <div class="sp-head">
+            <span class="sp-collapse" id="smartCollapse">‹</span>
+            <svg class="sp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/></svg>
+            <span class="sp-title">智能粘贴</span>
+          </div>
+          <textarea class="sp-input" id="smartInput" placeholder="粘贴文本到此处，将自动识别取货信息。例如：张三，139****1234，浙江省杭州市西湖区文三路 138 号"></textarea>
+          <div class="sp-actions">
+            <span class="sp-aux" data-rec="图片识别"><span class="sp-aux-ic">🖼</span>图片识别</span>
+            <span class="sp-submit" id="smartSubmit">粘贴并识别</span>
+          </div>
+        </div>
+
+        <!-- 地址表单 -->
+        <div class="aform">
+          <div class="af-row">
+            <span class="af-label">所在地区<span class="req">*</span></span>
+            <span class="af-value" id="locAddr">海珠区昌岗街道碧乐时光(海珠昌岗店)</span>
+            <span class="af-chevron">›</span>
+          </div>
+          <div class="af-row">
+            <span class="af-label">详细地址与门牌号<span class="req">*</span></span>
+            <input class="af-input" type="text" id="pickNo" placeholder="街道、小区、楼栋、门牌号" value="1">
+          </div>
+          <div class="af-row">
+            <span class="af-label">收货人姓名<span class="req">*</span></span>
+            <input class="af-input" type="text" id="pickName" placeholder="请输入收货人姓名" value="刘小姐">
+          </div>
+          <div class="af-row">
+            <span class="af-label">手机号码<span class="req">*</span></span>
+            <span class="af-code">+86</span>
+            <input class="af-input" type="tel" id="pickPhone" placeholder="请输入手机号码" value="19128256526">
+          </div>
+        </div>
+
+        <!-- 保存到常用地址 -->
+        <div class="save-addr" id="saveAddrToggle">
+          <span class="save-circle"></span>
+          <span>保存到常用地址</span>
+        </div>
+
+        <!-- 常用地址 -->
+        <div class="common-addr">
+          <div class="ca-head">常用地址</div>
+          <div class="ca-item">
+            <div class="ca-main">
+              <div class="ca-name">刘小姐<span class="ca-phone">19128256526</span></div>
+              <div class="ca-addr">海珠区昌岗街道碧乐时光(海珠昌岗店) 1号</div>
+            </div>
+            <span class="ca-btn">使用</span>
+          </div>
+          <div class="ca-item">
+            <div class="ca-main">
+              <div class="ca-name">张先生<span class="ca-phone">13812340000</span></div>
+              <div class="ca-addr">天河区珠江新城华夏路 8 号</div>
+            </div>
+            <span class="ca-btn">使用</span>
+          </div>
+          <div class="ca-item">
+            <div class="ca-main">
+              <div class="ca-name">李女士<span class="ca-phone">13912341111</span></div>
+              <div class="ca-addr">越秀区北京路 123 号</div>
+            </div>
+            <span class="ca-btn">使用</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 保存按钮 -->
+      <div class="asheet-footer">
+        <div class="store-submit" data-next-step>保存地址</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ① 首页（订单管理 · 复用参考图订单页） ============ -->
+  <section class="page tab-page" id="pg-home">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar">首页
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <!-- 订单状态 Tab + 搜索/筛选 -->
+      <div class="order-bar">
+        <div class="chips order-tabs" id="orderTabs">
+          <div class="chip active" data-order-status="new">新订单 <small>2</small></div>
+          <div class="chip" data-order-status="wait">待接单 <small>1</small></div>
+          <div class="chip" data-order-status="pickup">待取货 <small>1</small></div>
+          <div class="chip" data-order-status="delivery">配送中 <small>1</small></div>
+          <div class="chip" data-order-status="exception">异常单 <small>1</small></div>
+          <div class="chip" data-order-status="done">已完成 <small>1</small></div>
+        </div>
+        <span class="ob-tools">
+          <span class="ob-ic" data-search><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+          <span class="ob-ic" data-filter><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></span>
+        </span>
+      </div>
+
+      <!-- 订单列表 -->
+      <article class="order-card" data-status="new" data-platform="美团" data-type="即时单" data-time="11-01 15:52" data-pickup="北京市海淀区中关村大街 1 号 咪雪冰城" data-addr="北京市海淀区中关村大街 T1 栋 1806" data-name="王先生" data-phone="138****8518" data-tail="8518" data-store="咪雪冰城·北京中关村店" data-store-phone="138****0000" data-goods="奶茶套餐 ×1、鲜果茶 ×2" data-serial="H1101375182879513341952" data-ordered="11-01 15:22" data-expect="11-01 15:52" data-status-text="新订单">
+        <div class="oc-head">
+          <span class="oc-platform"><span class="pf-ic pf-mt">美</span>美团</span>
+          <span class="oc-type">即时单</span>
+          <span class="oc-time">11-01 15:52 送达</span>
+        </div>
+        <div class="oc-route">
+          <div class="or-leg"><span class="or-mark pickup">取</span><span class="or-text">北京市海淀区中关村大街 1 号 咪雪冰城</span></div>
+          <div class="or-leg"><span class="or-mark recv">收</span><span class="or-text">北京市海淀区中关村大街 T1 栋 1806</span></div>
+        </div>
+        <div class="oc-contact">
+          <span class="oc-name">王**</span>
+          <span class="oc-tail">尾号8518</span>
+          <button class="oc-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+        </div>
+        <div class="order-actions"><button class="order-btn secondary">取消配送</button><button class="order-btn primary">呼叫骑手</button></div>
+      </article>
+
+      <article class="order-card" data-status="new" data-platform="饿了么" data-type="即时单" data-time="11-01 15:49" data-pickup="北京市海淀区中关村大街 1 号 咪雪冰城" data-addr="北京市海淀区中关村大街时代广场 2F" data-name="李女士" data-phone="139****6623" data-tail="6623" data-store="咪雪冰城·北京中关村店" data-store-phone="138****0000" data-goods="招牌柠檬茶 ×1、珍珠奶茶 ×1" data-serial="H1101375182879513341963" data-ordered="11-01 15:19" data-expect="11-01 15:49" data-status-text="新订单">
+        <div class="oc-head">
+          <span class="oc-platform"><span class="pf-ic pf-ele">饿</span>饿了么</span>
+          <span class="oc-type">即时单</span>
+          <span class="oc-time">11-01 15:49 送达</span>
+        </div>
+        <div class="oc-route">
+          <div class="or-leg"><span class="or-mark pickup">取</span><span class="or-text">北京市海淀区中关村大街 1 号 咪雪冰城</span></div>
+          <div class="or-leg"><span class="or-mark recv">收</span><span class="or-text">北京市海淀区中关村大街时代广场 2F</span></div>
+        </div>
+        <div class="oc-contact">
+          <span class="oc-name">李**</span>
+          <span class="oc-tail">尾号6623</span>
+          <button class="oc-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+        </div>
+        <div class="order-actions"><button class="order-btn secondary">取消配送</button><button class="order-btn primary">呼叫骑手</button></div>
+      </article>
+
+      <article class="order-card" data-status="wait" data-platform="抖音" data-type="即时单" data-time="11-01 14:20" data-pickup="北京市海淀区中关村大街 1 号 咪雪冰城" data-addr="北京市海淀区中关村南大街 18 号附 2 号" data-name="陈先生" data-phone="137****1096" data-tail="1096" data-store="咪雪冰城·北京中关村店" data-store-phone="138****0000" data-goods="珍珠奶茶 ×2、炸鸡 ×1" data-serial="H1101375182879513341922" data-ordered="11-01 13:50" data-expect="11-01 14:20" data-status-text="待接单">
+        <div class="oc-head">
+          <span class="oc-platform"><span class="pf-ic pf-dy">抖</span>抖音</span>
+          <span class="oc-type">即时单</span>
+          <span class="oc-time">11-01 14:20 送达</span>
+        </div>
+        <div class="oc-route">
+          <div class="or-leg"><span class="or-mark pickup">取</span><span class="or-text">北京市海淀区中关村大街 1 号 咪雪冰城</span></div>
+          <div class="or-leg"><span class="or-mark recv">收</span><span class="or-text">北京市海淀区中关村南大街 18 号附 2 号</span></div>
+        </div>
+        <div class="oc-contact">
+          <span class="oc-name">陈**</span>
+          <span class="oc-tail">尾号1096</span>
+          <button class="oc-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+        </div>
+        <div class="order-actions"><button class="order-btn secondary">取消配送</button><button class="order-btn primary">呼叫骑手</button></div>
+      </article>
+
+      <article class="order-card" data-status="pickup" data-platform="京东到家" data-type="预约单" data-time="11-01 15:05" data-pickup="北京市海淀区中关村大街 1 号 咪雪冰城" data-addr="北京市海淀区中关村金融城 3 号楼" data-name="赵女士" data-phone="136****4270" data-tail="4270" data-store="咪雪冰城·北京中关村店" data-store-phone="138****0000" data-goods="满杯百香果 ×1、柠檬茶 ×1" data-serial="H1101375182879513341985" data-ordered="11-01 14:35" data-expect="11-01 15:05" data-status-text="待取货">
+        <div class="oc-head">
+          <span class="oc-platform"><span class="pf-ic pf-jd">京</span>京东到家</span>
+          <span class="oc-type">预约单</span>
+          <span class="oc-time">11-01 15:05 送达</span>
+        </div>
+        <div class="oc-route">
+          <div class="or-leg"><span class="or-mark pickup">取</span><span class="or-text">北京市海淀区中关村大街 1 号 咪雪冰城</span></div>
+          <div class="or-leg"><span class="or-mark recv">收</span><span class="or-text">北京市海淀区中关村金融城 3 号楼</span></div>
+        </div>
+        <div class="oc-contact">
+          <span class="oc-name">赵**</span>
+          <span class="oc-tail">尾号4270</span>
+          <button class="oc-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+        </div>
+        <div class="order-actions"><button class="order-btn secondary">取消配送</button><button class="order-btn primary">呼叫骑手</button></div>
+      </article>
+
+      <article class="order-card" data-status="delivery" data-platform="美团" data-type="即时单" data-time="11-01 15:52" data-pickup="北京市海淀区中关村大街 1 号 咪雪冰城" data-addr="北京市海淀区中关村步行街 8 号" data-name="周先生" data-phone="138****7821" data-tail="7821" data-store="咪雪冰城·北京中关村店" data-store-phone="138****0000" data-goods="鲜果茶 ×1、卤蛋 ×1" data-serial="H1101375182879513341974" data-ordered="11-01 15:22" data-expect="11-01 15:52" data-status-text="配送中">
+        <div class="oc-head">
+          <span class="oc-platform"><span class="pf-ic pf-mt">美</span>美团</span>
+          <span class="oc-type">即时单</span>
+          <span class="oc-time">11-01 15:52 送达</span>
+        </div>
+        <div class="oc-route">
+          <div class="or-leg"><span class="or-mark pickup">取</span><span class="or-text">北京市海淀区中关村大街 1 号 咪雪冰城</span></div>
+          <div class="or-leg"><span class="or-mark recv">收</span><span class="or-text">北京市海淀区中关村步行街 8 号</span></div>
+        </div>
+        <div class="oc-contact">
+          <span class="oc-name">周**</span>
+          <span class="oc-tail">尾号7821</span>
+          <button class="oc-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+        </div>
+        <div class="order-actions"><button class="order-btn secondary">取消配送</button><button class="order-btn primary">呼叫骑手</button></div>
+      </article>
+
+      <article class="order-card" data-status="exception" data-platform="饿了么" data-type="即时单" data-time="11-01 13:40" data-pickup="北京市海淀区中关村大街 1 号 咪雪冰城" data-addr="北京市海淀区中关村金融城 3 号楼" data-name="赵女士" data-phone="136****4270" data-tail="4270" data-store="咪雪冰城·北京中关村店" data-store-phone="138****0000" data-goods="满杯百香果 ×1、柠檬茶 ×1" data-serial="H1101375182879513341910" data-ordered="11-01 13:10" data-expect="11-01 13:40" data-status-text="已取消">
+        <div class="oc-head">
+          <span class="oc-platform"><span class="pf-ic pf-ele">饿</span>饿了么</span>
+          <span class="oc-type">即时单</span>
+          <span class="oc-time">11-01 13:40 送达</span>
+        </div>
+        <div class="oc-route">
+          <div class="or-leg"><span class="or-mark pickup">取</span><span class="or-text">北京市海淀区中关村大街 1 号 咪雪冰城</span></div>
+          <div class="or-leg"><span class="or-mark recv">收</span><span class="or-text">北京市海淀区中关村金融城 3 号楼</span></div>
+        </div>
+        <div class="oc-contact">
+          <span class="oc-name">赵**</span>
+          <span class="oc-tail">尾号4270</span>
+          <button class="oc-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+        </div>
+        <div class="oc-note fail">配送取消原因：暂时不需要配送</div>
+      </article>
+
+      <article class="order-card" data-status="done" data-platform="抖音" data-type="即时单" data-time="11-01 13:58" data-pickup="北京市海淀区中关村大街 1 号 咪雪冰城" data-addr="北京市海淀区中关村云竹路 12 号" data-name="刘先生" data-phone="135****2381" data-tail="2381" data-store="咪雪冰城·北京中关村店" data-store-phone="138****0000" data-goods="招牌奶茶 ×1" data-serial="H1101375182879513341901" data-ordered="11-01 13:28" data-expect="11-01 13:58" data-status-text="已完成">
+        <div class="oc-head">
+          <span class="oc-platform"><span class="pf-ic pf-dy">抖</span>抖音</span>
+          <span class="oc-type">即时单</span>
+          <span class="oc-time">11-01 13:58 送达</span>
+        </div>
+        <div class="oc-route">
+          <div class="or-leg"><span class="or-mark pickup">取</span><span class="or-text">北京市海淀区中关村大街 1 号 咪雪冰城</span></div>
+          <div class="or-leg"><span class="or-mark recv">收</span><span class="or-text">北京市海淀区中关村云竹路 12 号</span></div>
+        </div>
+        <div class="oc-contact">
+          <span class="oc-name">刘**</span>
+          <span class="oc-tail">尾号2381</span>
+          <button class="oc-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+        </div>
+        <div class="oc-note">订单已完成</div>
+      </article>
+
+      <div class="oc-end" id="orderEnd">没有更多了</div>
+      <div class="empty" id="orderEmpty" style="display:none"><div class="icon">📦</div>暂无符合条件的订单</div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：创建订单 ============ -->
+  <section class="page" id="pg-create-order">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>创建订单
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="empty"><div class="icon">📝</div>创建订单表单（待完善）</div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：订单详情 ============ -->
+  <section class="page" id="pg-order-detail">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>订单详情
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="od-map">
+        <svg viewBox="0 0 343 150" preserveAspectRatio="xMidYMid slice">
+          <rect width="343" height="150" fill="#eef1ee"/>
+          <g stroke="#e4e9e3" stroke-width="1">
+            <line x1="57" y1="0" x2="57" y2="150"/><line x1="114" y1="0" x2="114" y2="150"/>
+            <line x1="171" y1="0" x2="171" y2="150"/><line x1="228" y1="0" x2="228" y2="150"/>
+            <line x1="285" y1="0" x2="285" y2="150"/>
+            <line x1="0" y1="50" x2="343" y2="50"/><line x1="0" y1="100" x2="343" y2="100"/>
+          </g>
+          <rect x="22" y="16" width="72" height="42" rx="6" fill="#dbead4"/>
+          <rect x="238" y="92" width="84" height="42" rx="6" fill="#dbead4"/>
+          <path d="M0 132 C 60 118, 150 144, 220 130 S 330 116, 343 126 L 343 150 L 0 150 Z" fill="#d5e7f6"/>
+          <g stroke="#ffffff" stroke-width="7" stroke-linecap="round" fill="none">
+            <path d="M0 62 C 90 62, 160 78, 343 70"/>
+            <path d="M118 0 C 118 40, 108 92, 126 150"/>
+          </g>
+          <g stroke="#d7ddd6" stroke-width="1" fill="none">
+            <path d="M0 62 C 90 62, 160 78, 343 70"/>
+            <path d="M118 0 C 118 40, 108 92, 126 150"/>
+          </g>
+          <path d="M118 126 C 140 96, 200 78, 248 62" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="118" cy="126" r="10" fill="#2563eb" stroke="#fff" stroke-width="2"/>
+          <text x="118" y="130" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">发</text>
+          <circle cx="248" cy="62" r="10" fill="#5c8ed2" stroke="#fff" stroke-width="2"/>
+          <text x="248" y="66" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">收</text>
+        </svg>
+      </div>
+
+      <div class="od-addr-hero">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.3"/></svg>
+        <span id="odAddr">北京市海淀区中关村步行街 8 号</span>
+      </div>
+
+      <div class="od-contact">
+        <div class="od-contact-row">
+          <span class="od-contact-mark send">发</span>
+          <div class="od-contact-main"><div class="od-contact-name" id="odStore">咪雪冰城·北京中关村店</div><div class="od-contact-sub">发货方</div></div>
+          <span class="od-contact-phone" id="odStorePhone">138****0000</span>
+        </div>
+        <div class="od-contact-row">
+          <span class="od-contact-mark recv">收</span>
+          <div class="od-contact-main"><div class="od-contact-name" id="odName">周先生</div><div class="od-contact-sub">收货方</div></div>
+          <span class="od-contact-phone" id="odPhone">138****7821</span>
+        </div>
+      </div>
+
+      <div class="od-card">
+        <div class="od-card-head toggle" id="odGoodsHead">商品信息 <span class="arrow"><svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></span></div>
+        <div class="od-goods" id="odGoods" style="display:none">鲜果茶 ×1、卤蛋 ×1</div>
+      </div>
+
+      <div class="od-card">
+        <div class="od-card-head">订单信息</div>
+        <div class="tx-detail-row"><span class="td-lbl">订单编号</span><span class="td-val" id="odSerial">H1101375182879513341974</span><span class="od-link" id="odCopy">复制</span></div>
+        <div class="tx-detail-row"><span class="td-lbl">下单时间</span><span class="td-val" id="odTime">11-01 15:22</span></div>
+        <div class="tx-detail-row"><span class="td-lbl">期望送达</span><span class="td-val" id="odExpect">11-01 15:52</span></div>
+        <div class="tx-detail-row"><span class="td-lbl">配送情况</span><span class="td-val" id="odStatusText">配送中</span><span class="od-link" id="odStatusView">查看</span></div>
+        <div class="tx-detail-row"><span class="td-lbl">操作记录</span><span class="td-val"></span><span class="od-link" id="odLogView">查看</span></div>
+      </div>
+
+      <div class="od-action"><button class="order-btn secondary" id="odCancel">取消配送</button></div>
+    </div>
+  </section>
+
+  <!-- ============ ② 消息（空） ============ -->
+  <section class="page tab-page" id="pg-msg">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar">消息
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="empty"><div class="icon">💬</div>暂无消息</div>
+  </section>
+
+  <!-- ============ ③ 数据（数据统计） ============ -->
+  <section class="page" id="pg-data">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>数据统计
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="dsec-head">
+        <span class="dsec-title">今日实时数据</span>
+        <span class="dsec-sub">今日 00:00 至当前时刻</span>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <div class="st-label">订单数</div>
+          <div class="st-value">128<span class="unit">单</span></div>
+          <div class="st-delta up"><span class="arrow">↑</span> 较昨日 +12</div>
+        </div>
+        <div class="stat-tile">
+          <div class="st-label">配送下单数</div>
+          <div class="st-value">96<span class="unit">单</span></div>
+          <div class="st-delta up"><span class="arrow">↑</span> 较昨日 +8</div>
+        </div>
+        <div class="stat-tile">
+          <div class="st-label">完成订单数</div>
+          <div class="st-value">82<span class="unit">单</span></div>
+          <div class="st-delta up"><span class="arrow">↑</span> 较昨日 +6</div>
+        </div>
+        <div class="stat-tile">
+          <div class="st-label">进行中订单</div>
+          <div class="st-value">14<span class="unit">单</span></div>
+          <div class="st-delta flat">较昨日 持平</div>
+        </div>
+        <div class="stat-tile">
+          <div class="st-label">配送费用<span class="qmark" data-tip="配送费用 = 完成单配送费 + 违约金费用">?</span></div>
+          <div class="st-value">¥1,286.40</div>
+          <div class="st-delta up"><span class="arrow">↑</span> 较昨日 +168.20</div>
+        </div>
+        <div class="stat-tile">
+          <div class="st-label">单均配送费</div>
+          <div class="st-value">¥15.69</div>
+          <div class="st-delta down"><span class="arrow">↓</span> 较昨日 -0.35</div>
+        </div>
+      </div>
+
+      <div class="dsec-head" style="margin-top:18px">
+        <span class="dsec-title">历史营业数据</span>
+        <span class="dsec-sub">近30天 · 含当天</span>
+      </div>
+      <div class="chips seg" style="margin-bottom:12px">
+        <div class="chip active">完成订单数</div>
+        <div class="chip">配送费用</div>
+        <div class="chip">配送下单数</div>
+        <div class="chip">单均配送费</div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <div><span class="chart-title">完成订单数</span><span class="chart-sub">近30天 · 单</span></div>
+          <span class="chart-more">点击数据点查看详情 ›</span>
+        </div>
+        <svg class="chart" viewBox="0 0 330 150" role="img" aria-label="完成订单数近30天折线图">
+          <line x1="36" y1="14" x2="316" y2="14" class="grid"/>
+          <line x1="36" y1="42.5" x2="316" y2="42.5" class="grid"/>
+          <line x1="36" y1="71" x2="316" y2="71" class="grid"/>
+          <line x1="36" y1="99.5" x2="316" y2="99.5" class="grid"/>
+          <line x1="36" y1="128" x2="316" y2="128" class="axis"/>
+          <text x="30" y="17" class="ytick" text-anchor="end">120</text>
+          <text x="30" y="45.5" class="ytick" text-anchor="end">90</text>
+          <text x="30" y="74" class="ytick" text-anchor="end">60</text>
+          <text x="30" y="102.5" class="ytick" text-anchor="end">30</text>
+          <text x="30" y="131" class="ytick" text-anchor="end">0</text>
+          <path d="M 36 128 L 36.0 53.9 L 45.7 50.1 L 55.3 56.8 L 65.0 44.4 L 74.6 41.5 L 84.3 48.2 L 93.9 36.8 L 103.6 43.5 L 113.2 59.6 L 122.9 52.0 L 132.6 47.2 L 142.2 40.6 L 151.9 34.9 L 161.5 42.5 L 171.2 49.2 L 180.8 37.8 L 190.5 32.0 L 200.1 44.4 L 209.8 55.8 L 219.4 51.0 L 229.1 45.4 L 238.8 39.6 L 248.4 34.0 L 258.1 29.2 L 267.7 41.5 L 277.4 47.2 L 287.0 35.8 L 296.7 31.1 L 306.3 36.8 L 316.0 25.4 L 316 128 Z" class="area"/>
+          <polyline points="36.0,53.9 45.7,50.1 55.3,56.8 65.0,44.4 74.6,41.5 84.3,48.2 93.9,36.8 103.6,43.5 113.2,59.6 122.9,52.0 132.6,47.2 142.2,40.6 151.9,34.9 161.5,42.5 171.2,49.2 180.8,37.8 190.5,32.0 200.1,44.4 209.8,55.8 219.4,51.0 229.1,45.4 238.8,39.6 248.4,34.0 258.1,29.2 267.7,41.5 277.4,47.2 287.0,35.8 296.7,31.1 306.3,36.8 316.0,25.4" class="line s1"/>
+          <circle cx="316" cy="25.4" r="5" class="ring"/>
+          <circle cx="316" cy="25.4" r="4" class="enddot"/>
+          <text x="316" y="17" class="val" text-anchor="end">10-28 · 108</text>
+          <text x="36" y="146" class="xtick" text-anchor="middle">09-29</text>
+          <text x="103.6" y="146" class="xtick" text-anchor="middle">10-06</text>
+          <text x="171.2" y="146" class="xtick" text-anchor="middle">10-13</text>
+          <text x="238.8" y="146" class="xtick" text-anchor="middle">10-20</text>
+          <text x="306.3" y="146" class="xtick" text-anchor="middle">10-27</text>
+          <text x="316" y="146" class="xtick" text-anchor="end">10-28</text>
+        </svg>
+      </div>
+
+      <div class="footnote">较昨日 = 今日与昨日同时刻对比；完成订单数为 0 时单均配送费显示「—」</div>
+    </div>
+  </section>
+
+  <!-- ============ ④ 我的 ============ -->
+  <section class="page tab-page" id="pg-mine">
+    <div class="mine-header">
+      <div class="statusbar">
+        <span class="time">9:41</span>
+        <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#fff"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#fff"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#fff"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#fff" opacity="0.4"/></svg></span>
+      </div>
+      <div class="navbar mine-nav">我的
+        <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+      </div>
+      <div class="profile">
+        <div class="avatar">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20.5c0-3.6 3.4-5.5 7.5-5.5s7.5 1.9 7.5 5.5"/></svg>
+        </div>
+        <div class="pinfo">
+          <div class="pname">咪雪冰城</div>
+        </div>
+        <div class="profile-action" data-go="account">账号管理<span class="arrow">›</span></div>
+      </div>
+    </div>
+    <div class="mine-body">
+      <div class="mine-balance" data-go="wallet" style="cursor:pointer">
+        <div class="bm-top">
+          <div>
+            <div class="bm-label">钱包余额（元）</div>
+            <div class="bm-amount"><span class="cny">¥</span>12,580.50</div>
+          </div>
+          <span class="bm-detail" data-go="wallet">查看明细 ›</span>
+        </div>
+        <div class="bm-actions">
+          <div class="bm-recharge" data-go="recharge">充值</div>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-head"><span class="bar"></span><span class="gtitle">常用功能</span></div>
+        <div class="grid4">
+          <div class="grid-item" data-go="data"><span class="grid-icon">📊</span><span class="grid-label">数据统计</span></div>
+          <div class="grid-item" data-go="address-book"><span class="grid-icon">📍</span><span class="grid-label">常用地址</span></div>
+          <div class="grid-item" data-go="settings"><span class="grid-icon">⚙️</span><span class="grid-label">设置</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：钱包 ============ -->
+  <section class="page" id="pg-wallet">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>钱包
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="balance-card">
+        <div class="bl-label">可用余额（元）<span class="eye">👁</span></div>
+        <div class="bl-amount"><span class="cny">¥</span>12,580.50</div>
+        <div class="bl-actions">
+          <div class="bl-btn primary" data-go="recharge">充值</div>
+        </div>
+      </div>
+
+      <div class="wf-tabs" id="wfTabs">
+        <div class="tab-item active" data-wftab="delivery">配送交易记录</div>
+        <div class="tab-item" data-wftab="recharge">充值记录</div>
+      </div>
+
+      <div id="wfDeliveryPane">
+        <div class="chips seg wf-range" id="wfDeliveryRange">
+          <div class="chip" data-range="today">今日</div>
+          <div class="chip" data-range="yesterday">昨日</div>
+          <div class="chip active" data-range="week">近7日</div>
+          <div class="chip" data-range="month">本月</div>
+          <div class="chip" data-range="custom">自定义</div>
+        </div>
+
+        <div class="wf-custom" id="wfDeliveryCustom" style="display:none">
+          <input type="date" id="wfDeliveryStart" value="2026-10-21">
+          <span>至</span>
+          <input type="date" id="wfDeliveryEnd" value="2026-10-27">
+        </div>
+
+        <div class="wf-summary">
+          <span>共 <b id="wfDeliveryCount">0</b> 笔</span>
+          <span>支出 <b id="wfDeliveryExpense">¥0.00</b></span>
+        </div>
+
+        <div id="wfDeliveryDays"></div>
+        <div class="tx-empty" id="wfDeliveryEmpty" style="display:none">该时间段内暂无配送交易记录</div>
+      </div>
+
+      <div id="wfBillPane" style="display:none">
+        <div class="chips seg wf-range" id="wfRange">
+          <div class="chip" data-range="today">今日</div>
+          <div class="chip" data-range="yesterday">昨日</div>
+          <div class="chip active" data-range="week">近7日</div>
+          <div class="chip" data-range="month">本月</div>
+          <div class="chip" data-range="custom">自定义</div>
+        </div>
+
+        <div class="wf-custom" id="wfCustom" style="display:none">
+          <input type="date" id="wfStart" value="2026-10-21">
+          <span>至</span>
+          <input type="date" id="wfEnd" value="2026-10-27">
+        </div>
+
+        <div id="wfDays"></div>
+        <div class="tx-empty" id="wfEmpty" style="display:none">该时间段内暂无充值记录</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：发货门店 ============ -->
+  <section class="page" id="pg-store">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>发货门店
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="sheet">
+        <div class="store-mgmt-item" data-edit-store data-name="咪雪冰城·北京中关村店" data-contact="张伟" data-phone="13812340000" data-addr="北京市海淀区中关村大街 1 号" data-cat="甜品奶茶">
+          <div class="smi-main">
+            <div class="smi-name">咪雪冰城·北京中关村店</div>
+            <div class="smi-sub">联系人：张伟　13812340000<br>门店编号：100123 <span class="smi-copy" data-copy="100123">复制</span></div>
+          </div>
+          <span class="smi-chevron">›</span>
+        </div>
+        <div class="store-mgmt-item" data-edit-store data-name="咪雪冰城·北京五道口店" data-contact="李娜" data-phone="13912341111" data-addr="北京市海淀区成府路 28 号" data-cat="小吃美食">
+          <div class="smi-main">
+            <div class="smi-name">咪雪冰城·北京五道口店</div>
+            <div class="smi-sub">联系人：李娜　13912341111<br>门店编号：100124 <span class="smi-copy" data-copy="100124">复制</span></div>
+          </div>
+          <span class="smi-chevron">›</span>
+        </div>
+        <div class="store-mgmt-item" data-edit-store data-name="咪雪冰城·北京知春路店" data-contact="王强" data-phone="13712342222" data-addr="北京市海淀区知春路 56 号" data-cat="正餐快餐">
+          <div class="smi-main">
+            <div class="smi-name">咪雪冰城·北京知春路店</div>
+            <div class="smi-sub">联系人：王强　13712342222<br>门店编号：100125 <span class="smi-copy" data-copy="100125">复制</span></div>
+          </div>
+          <span class="smi-chevron">›</span>
+        </div>
+        <div class="store-mgmt-item" data-edit-store data-name="咪雪冰城·北京苏州街店" data-contact="赵敏" data-phone="13612343333" data-addr="北京市海淀区苏州街 19 号" data-cat="甜品奶茶">
+          <div class="smi-main">
+            <div class="smi-name">咪雪冰城·北京苏州街店</div>
+            <div class="smi-sub">联系人：赵敏　13612343333<br>门店编号：100126 <span class="smi-copy" data-copy="100126">复制</span></div>
+          </div>
+          <span class="smi-chevron">›</span>
+        </div>
+      </div>
+    </div>
+    <div class="store-footer">
+      <div class="store-add-btn" id="addStoreBtn">新增门店</div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：新增门店 ============ -->
+  <section class="page" id="pg-store-add">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>新增门店
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="store-form">
+        <div class="sf-row">
+          <span class="sf-label">门店名称</span>
+          <input class="sf-input" type="text" id="addName" placeholder="请输入门店名称">
+        </div>
+        <div class="sf-row">
+          <span class="sf-label">联系人姓名</span>
+          <input class="sf-input" type="text" id="addContact" placeholder="请输入联系人姓名">
+        </div>
+        <div class="sf-row">
+          <span class="sf-label">联系人电话</span>
+          <input class="sf-input" type="tel" id="addPhone" placeholder="请输入联系人电话">
+        </div>
+        <div class="sf-row sf-picker-row">
+          <span class="sf-label">门店地址</span>
+          <span class="sf-input" id="addAddr" style="color:#9ca3af">选择地址</span>
+          <span class="sf-chevron">›</span>
+        </div>
+        <div class="sf-row">
+          <span class="sf-label">门牌号</span>
+          <input class="sf-input" type="text" id="addDetail" placeholder="详细地址">
+        </div>
+        <div class="sf-row sf-picker-row" data-open-cat="add">
+          <span class="sf-label">经营品类</span>
+          <span class="sf-input" id="addCat">请选择经营品类</span>
+          <span class="sf-chevron">›</span>
+        </div>
+      </div>
+    </div>
+    <div class="store-footer">
+      <div class="store-submit" data-save-add>保存</div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：编辑门店 ============ -->
+  <section class="page" id="pg-store-edit">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>编辑门店
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="store-form">
+        <div class="sf-row">
+          <span class="sf-label">门店名称</span>
+          <input class="sf-input" type="text" id="editName" placeholder="请输入门店名称">
+        </div>
+        <div class="sf-row">
+          <span class="sf-label">联系人姓名</span>
+          <input class="sf-input" type="text" id="editContact" placeholder="请输入联系人姓名">
+        </div>
+        <div class="sf-row">
+          <span class="sf-label">联系人电话</span>
+          <input class="sf-input" type="tel" id="editPhone" placeholder="请输入联系人电话">
+        </div>
+        <div class="sf-row sf-picker-row">
+          <span class="sf-label">门店地址</span>
+          <span class="sf-input" id="editAddr" style="color:#9ca3af">选择地址</span>
+          <span class="sf-chevron">›</span>
+        </div>
+        <div class="sf-row">
+          <span class="sf-label">门牌号</span>
+          <input class="sf-input" type="text" id="editDetail" placeholder="详细地址">
+        </div>
+        <div class="sf-row sf-picker-row" data-open-cat="edit">
+          <span class="sf-label">经营品类</span>
+          <span class="sf-input" id="editCat">请选择经营品类</span>
+          <span class="sf-chevron">›</span>
+        </div>
+      </div>
+    </div>
+    <div class="store-footer">
+      <div class="store-submit" data-save-edit>保存</div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：在线充值 ============ -->
+  <section class="page" id="pg-recharge">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>在线充值
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="balance-card" style="margin-bottom:14px">
+        <div class="bl-label">可用余额（元）</div>
+        <div class="bl-amount"><span class="cny">¥</span>12,580.50</div>
+      </div>
+      <div class="recharge-title">充值金额</div>
+      <div class="presets">
+        <div class="preset active" data-val="10">10元</div>
+        <div class="preset" data-val="20">20元</div>
+        <div class="preset" data-val="50">50元</div>
+        <div class="preset" data-val="100">100元</div>
+        <div class="preset" data-val="200">200元</div>
+        <div class="preset" data-val="500">500元</div>
+        <div class="preset" data-val="1000">1000元</div>
+        <div class="preset-input"><input type="number" id="otherAmount" placeholder="其他金额"></div>
+      </div>
+      <div class="pay-method">
+        <div class="pm-title">支付方式</div>
+        <div class="pm-item selected">
+          <div class="pm-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#fff"><path d="M12 3C6.5 3 2 6.9 2 11.7c0 2.7 1.4 5.1 3.7 6.7L5 22l4.2-2.2c.9.2 1.8.4 2.8.4 5.5 0 10-3.9 10-8.5S17.5 3 12 3z"/></svg>
+          </div>
+          <div class="pm-name">微信支付</div>
+          <div class="pm-check">✓</div>
+        </div>
+      </div>
+    </div>
+    <div class="store-footer">
+      <div class="pay-btn" data-recharge><span id="payBtnText">立即充值 ¥1,000.00</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：充值结果 ============ -->
+  <section class="page" id="pg-recharge-ok">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar">充值结果
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="result">
+        <div class="ok">✓</div>
+        <div class="title">充值成功</div>
+        <div class="amt" id="resultAmount">+¥1,000.00</div>
+        <div class="meta">流水号 CZ202610270941 · 已实时到账</div>
+      </div>
+      <div class="balance-card" style="margin-top:20px">
+        <div class="bl-label">当前可用余额（元）</div>
+        <div class="bl-amount"><span class="cny">¥</span>13,580.50</div>
+        <div class="bl-actions"><div class="bl-btn primary" data-go="wallet">返回钱包</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：交易详情 ============ -->
+  <section class="page" id="pg-tx-detail">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>交易详情
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="tx-detail-head">
+        <div class="tx-detail-amount" id="txdAmount">-¥18.50</div>
+        <div class="tx-detail-title"><span class="tag tag-delivery" id="txdTypeTag">配送费</span></div>
+      </div>
+      <div class="tx-detail-card">
+        <div class="tx-detail-row"><span class="td-lbl">交易时间</span><span class="td-val" id="txdTime">2026-10-27 12:30:00</span></div>
+        <div class="tx-detail-row"><span class="td-lbl">交易类型</span><span class="td-val" id="txdType">配送费</span></div>
+        <div class="tx-detail-row"><span class="td-lbl">交易流水号</span><span class="td-val" id="txdSerial">T202610271230001</span></div>
+        <div class="tx-detail-row"><span class="td-lbl">订单号</span><span class="td-val" id="txdOrderNo">H1101375182879513341952</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：余额提醒设置 ============ -->
+  <section class="page" id="pg-remind">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>余额提醒设置
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="set-group">
+        <div class="set-row">
+          <div class="lbl">余额不足提醒<div class="sub">余额低于预警值时自动提醒</div></div>
+          <div class="toggle"></div>
+        </div>
+      </div>
+      <div class="set-group">
+        <div class="set-row">
+          <div class="lbl">预警值</div>
+          <div class="th-input"><span class="prefix">低于</span><input type="number" value="500"><span class="unit">元时提醒</span></div>
+        </div>
+        <div class="set-row">
+          <div class="lbl"><div class="sub">当前门店可用余额 ¥12,580.50，低于 ¥500 时触发提醒</div></div>
+        </div>
+      </div>
+      <div class="set-group">
+        <div class="set-row" style="padding-bottom:8px"><div class="lbl" style="font-size:13px;color:var(--text2)">提醒方式</div></div>
+        <div class="set-row" style="padding-top:0">
+          <div class="opt-list">
+            <div class="opt sel"><span class="radio"></span>微信服务通知（订阅消息）</div>
+            <div class="opt"><span class="radio"></span>站内提醒（我的 / 钱包入口红点）</div>
+          </div>
+        </div>
+      </div>
+      <div class="set-note">说明：余额提醒仅作提醒，不影响下单；订单因余额不足被拦截的强告警是否在钱包页展示，待定。</div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：账号管理 ============ -->
+  <section class="page" id="pg-account">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>账号管理
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="acct-top">
+        <div class="avatar-ph">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20.5c0-3.6 3.4-5.5 7.5-5.5s7.5 1.9 7.5 5.5"/></svg>
+        </div>
+        <div>
+          <div class="aname">咪雪冰城</div>
+        </div>
+      </div>
+      <div class="acct-card">
+        <div class="acct-row" data-go="remind"><span>🔔</span><span>余额提醒设置</span><span class="arow-right">›</span></div>
+      </div>
+      <div class="acct-card">
+        <div class="acct-row logout" data-logout>退出登录</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：设置 ============ -->
+  <section class="page" id="pg-settings">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>设置
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="acct-card">
+        <div class="acct-row" data-go="about"><span>ℹ️</span><span>关于我们</span><span class="arow-right">›</span></div>
+      </div>
+      <div class="acct-card">
+        <div class="acct-row logout" data-logout>退出登录</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 子页面：关于我们 ============ -->
+  <section class="page" id="pg-about">
+    <div class="statusbar">
+      <span class="time">9:41</span>
+      <span class="icons"><svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="9" y="3" width="3" height="8" rx="1" fill="#111"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111" opacity="0.3"/></svg></span>
+    </div>
+    <div class="navbar"><span class="back" data-back>‹</span>关于我们
+      <div class="capsule"><span class="dot3">•••</span><span class="ring"></span></div>
+    </div>
+    <div class="content">
+      <div class="about-wrap">
+        <div class="about-logo">🚚</div>
+        <div class="about-name">无忧配送商家端</div>
+        <div class="about-ver">版本 1.0.0</div>
+        <div class="about-desc">为中小商家提供高效、便捷的同城配送下单与门店管理服务。</div>
+        <div class="about-copy">© 2026 无忧配送</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TabBar（方案1：下单居中凸起） ============ -->
+  <nav class="tabbar center-bar">
+    <div class="tab active" data-tab="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+      订单
+    </div>
+    <div class="tab-center" data-tab="send">
+      <span class="center-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        下单
+      </span>
+    </div>
+    <div class="tab" data-tab="mine">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 21c0-4 3-6 7-6s7 2 7 6"/></svg>
+      我的
+    </div>
+  </nav>
+
+  <!-- 底部 Home Indicator（iPhone 14/15 模拟器） -->
+  <div class="home-indicator"></div>
+
+  <!-- 经营品类选择弹窗 -->
+  <div class="drawer-mask" id="catMask">
+    <div class="drawer">
+      <div class="drawer-head">
+        <span class="drawer-title">选择经营品类</span>
+        <span class="drawer-close" id="catClose">✕</span>
+      </div>
+      <div class="cat-grid">
+        <div class="cat-item" data-cat="小吃美食">小吃美食</div>
+        <div class="cat-item" data-cat="正餐快餐">正餐快餐</div>
+        <div class="cat-item" data-cat="龙虾烧烤">龙虾烧烤</div>
+        <div class="cat-item" data-cat="烘焙蛋糕">烘焙蛋糕</div>
+        <div class="cat-item" data-cat="甜品奶茶">甜品奶茶</div>
+        <div class="cat-item" data-cat="西餐料理">西餐料理</div>
+        <div class="cat-item" data-cat="火锅串串">火锅串串</div>
+        <div class="cat-item" data-cat="浪漫鲜花">浪漫鲜花</div>
+        <div class="cat-item" data-cat="生鲜果蔬">生鲜果蔬</div>
+        <div class="cat-item" data-cat="酒水零售">酒水零售</div>
+        <div class="cat-item" data-cat="超市百货">超市百货</div>
+        <div class="cat-item" data-cat="医药">医药</div>
+        <div class="cat-item" data-cat="成人">成人</div>
+        <div class="cat-item" data-cat="数码家电">数码家电</div>
+        <div class="cat-item" data-cat="母婴">母婴</div>
+        <div class="cat-item" data-cat="宠物">宠物</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 物品信息弹窗 -->
+  <div class="drawer-mask" id="goodsMask">
+    <div class="drawer">
+      <div class="drawer-head">
+        <span class="drawer-title">物品信息</span>
+        <span class="drawer-close" id="goodsClose">✕</span>
+      </div>
+      <div class="drawer-label" style="margin-top:4px">物品类别</div>
+      <div class="goods-cat-grid">
+        <div class="goods-cat-item" data-cat="小吃美食">小吃美食</div>
+        <div class="goods-cat-item" data-cat="正餐快餐">正餐快餐</div>
+        <div class="goods-cat-item" data-cat="龙虾烧烤">龙虾烧烤</div>
+        <div class="goods-cat-item" data-cat="烘焙蛋糕">烘焙蛋糕</div>
+        <div class="goods-cat-item" data-cat="甜品奶茶">甜品奶茶</div>
+        <div class="goods-cat-item" data-cat="西餐料理">西餐料理</div>
+        <div class="goods-cat-item" data-cat="火锅串串">火锅串串</div>
+        <div class="goods-cat-item" data-cat="浪漫鲜花">浪漫鲜花</div>
+        <div class="goods-cat-item" data-cat="生鲜果蔬">生鲜果蔬</div>
+        <div class="goods-cat-item" data-cat="酒水零售">酒水零售</div>
+        <div class="goods-cat-item" data-cat="超市百货">超市百货</div>
+        <div class="goods-cat-item" data-cat="医药">医药</div>
+        <div class="goods-cat-item" data-cat="成人">成人</div>
+        <div class="goods-cat-item" data-cat="数码家电">数码家电</div>
+        <div class="goods-cat-item" data-cat="母婴">母婴</div>
+        <div class="goods-cat-item" data-cat="宠物">宠物</div>
+        <div class="goods-cat-item" data-cat="美妆">美妆</div>
+        <div class="goods-cat-item" data-cat="服装">服装</div>
+        <div class="goods-cat-item" data-cat="汽配">汽配</div>
+        <div class="goods-cat-item" data-cat="烟酒行">烟酒行</div>
+        <div class="goods-cat-item" data-cat="其他">其他</div>
+      </div>
+      <div class="weight-head">
+        <span class="drawer-label">重量</span>
+        <span class="weight-val-wrap" id="weightValWrap">
+          <span class="weight-val" id="weightVal">1KG</span>
+          <span class="weight-arrow">›</span>
+        </span>
+        <input class="weight-input" id="weightInput" type="number" min="1" max="50" step="1" inputmode="numeric" placeholder="KG">
+      </div>
+      <div class="weight-slider">
+        <input type="range" id="weightRange" min="1" max="50" step="1" value="1">
+        <div class="weight-scale"><span>1KG</span><span>25KG</span><span>50KG</span></div>
+      </div>
+      <div class="drawer-foot">
+        <div class="drawer-btn primary" id="goodsConfirm">确定</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 上门时间弹窗 -->
+  <div class="drawer-mask" id="timeMask">
+    <div class="drawer">
+      <div class="drawer-head">
+        <span class="drawer-title">选择上门时间</span>
+        <span class="drawer-close" id="timeClose">✕</span>
+      </div>
+      <div class="time-list">
+        <div class="time-opt active" data-time="今天 立即取件"><span class="radio"></span>今天 立即取件</div>
+        <div class="time-opt" data-time="今天 14:00-16:00"><span class="radio"></span>今天 14:00-16:00</div>
+        <div class="time-opt" data-time="今天 16:00-18:00"><span class="radio"></span>今天 16:00-18:00</div>
+        <div class="time-opt" data-time="明天 09:00-11:00"><span class="radio"></span>明天 09:00-11:00</div>
+        <div class="time-opt" data-time="明天 14:00-16:00"><span class="radio"></span>明天 14:00-16:00</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  const TABS = ['home', 'send', 'mine'];
+  let stack = ['send'];
+  let rechargeAmount = 10;
+
+  function render() {
+    const cur = stack[stack.length - 1];
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const el = document.getElementById('pg-' + cur);
+    if (el) { el.classList.add('active'); el.scrollTop = 0; }
+    const isTab = TABS.indexOf(cur) >= 0;
+    document.querySelector('.tabbar').style.display = isTab ? 'flex' : 'none';
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === cur));
+    // 下单页（首页）隐藏中间凸起「下单」按钮，其余页面正常显示
+    const centerBtn = document.querySelector('.tab-center');
+    if (centerBtn) centerBtn.style.display = (cur === 'send') ? 'none' : 'flex';
+  }
+
+  window.go = function (id) { stack.push(id); render(); };
+  window.back = function () { if (stack.length > 1) { stack.pop(); render(); } };
+  window.switchTab = function (id) { stack = [id]; render(); };
+
+  document.querySelectorAll('[data-tab]').forEach(el =>
+    el.addEventListener('click', (e) => { e.stopPropagation(); switchTab(el.dataset.tab); }));
+  document.querySelectorAll('[data-go]').forEach(el =>
+    el.addEventListener('click', (e) => { e.stopPropagation(); go(el.dataset.go); }));
+  document.querySelectorAll('[data-back]').forEach(el =>
+    el.addEventListener('click', (e) => { e.stopPropagation(); back(); }));
+
+  // ===== 首页下单（图1） =====
+  document.querySelector('[data-send]').addEventListener('click', () => alert('下单成功（原型示意）'));
+
+  // ===== 首页下单：物品信息 / 上门时间 =====
+  const goodsMask = document.getElementById('goodsMask');
+  const timeMask = document.getElementById('timeMask');
+  const goodsValue = document.getElementById('goodsValue');
+  const timeValue = document.getElementById('timeValue');
+  const weightRange = document.getElementById('weightRange');
+  const weightVal = document.getElementById('weightVal');
+  const weightValWrap = document.getElementById('weightValWrap');
+  const weightInput = document.getElementById('weightInput');
+  let selectedCat = '';
+  let selectedWeight = 1;
+  let selectedTime = '今天 立即取件';
+
+  function paintWeight() {
+    const min = +weightRange.min, max = +weightRange.max, v = +weightRange.value;
+    const pct = ((v - min) / (max - min)) * 100;
+    weightRange.style.setProperty('--track', 'linear-gradient(90deg, var(--primary) ' + pct + '%, #e5e7eb ' + pct + '%)');
+    weightVal.textContent = v + 'KG';
+  }
+  paintWeight();
+
+  // 物品信息：打开弹窗（恢复当前选择）
+  document.querySelectorAll('[data-open-goods]').forEach(el => el.addEventListener('click', () => {
+    document.querySelectorAll('#goodsMask .goods-cat-item').forEach(c => c.classList.toggle('active', c.dataset.cat === selectedCat));
+    weightRange.value = selectedWeight;
+    paintWeight();
+    goodsMask.classList.add('open');
+  }));
+  document.querySelectorAll('#goodsMask .goods-cat-item').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('#goodsMask .goods-cat-item').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    selectedCat = c.dataset.cat;
+  }));
+  weightRange.addEventListener('input', () => { selectedWeight = +weightRange.value; paintWeight(); });
+  // 重量：点击数值直接数字输入
+  weightValWrap.addEventListener('click', () => {
+    weightInput.value = selectedWeight;
+    weightValWrap.classList.add('hide');
+    weightInput.classList.add('show');
+    weightInput.focus();
+    weightInput.select();
+  });
+  function commitWeightInput() {
+    if (!weightInput.classList.contains('show')) return;
+    let v = parseInt(weightInput.value, 10);
+    if (isNaN(v)) v = selectedWeight;
+    v = Math.max(1, Math.min(50, v));
+    selectedWeight = v;
+    weightRange.value = v;
+    paintWeight();
+    weightInput.classList.remove('show');
+    weightValWrap.classList.remove('hide');
+  }
+  weightInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commitWeightInput(); }
+  });
+  weightInput.addEventListener('blur', commitWeightInput);
+  document.getElementById('goodsClose').addEventListener('click', () => goodsMask.classList.remove('open'));
+  goodsMask.addEventListener('click', (e) => { if (e.target === goodsMask) goodsMask.classList.remove('open'); });
+  document.getElementById('goodsConfirm').addEventListener('click', () => {
+    if (!selectedCat) { alert('请选择物品类别'); return; }
+    goodsValue.textContent = selectedCat + ' · ' + selectedWeight + 'KG';
+    goodsValue.classList.remove('placeholder');
+    goodsMask.classList.remove('open');
+  });
+
+  // 上门时间：打开弹窗选择
+  document.querySelectorAll('[data-open-time]').forEach(el => el.addEventListener('click', () => {
+    document.querySelectorAll('#timeMask .time-opt').forEach(o => o.classList.toggle('active', o.dataset.time === selectedTime));
+    timeMask.classList.add('open');
+  }));
+  document.querySelectorAll('#timeMask .time-opt').forEach(o => o.addEventListener('click', () => {
+    document.querySelectorAll('#timeMask .time-opt').forEach(x => x.classList.remove('active'));
+    o.classList.add('active');
+    selectedTime = o.dataset.time;
+    timeValue.textContent = selectedTime;
+    timeMask.classList.remove('open');
+  }));
+  document.getElementById('timeClose').addEventListener('click', () => timeMask.classList.remove('open'));
+  timeMask.addEventListener('click', (e) => { if (e.target === timeMask) timeMask.classList.remove('open'); });
+
+  // ===== 填写取送信息（图2） =====
+  document.querySelectorAll('.sf-tag').forEach(t => t.addEventListener('click', () => {
+    document.querySelectorAll('.sf-tag').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+  }));
+  document.querySelectorAll('.ca-btn').forEach(el => el.addEventListener('click', () => alert('已使用该地址（原型示意）')));
+  document.querySelector('[data-next-step]').addEventListener('click', () => alert('已保存地址（原型示意）'));
+  const saveAddrToggle = document.getElementById('saveAddrToggle');
+  if (saveAddrToggle) saveAddrToggle.addEventListener('click', () => saveAddrToggle.classList.toggle('on'));
+
+  // ===== 地址页：地图背景 + 底部弹层（智能粘贴展开/收起、弹层拖动手柄） =====
+  const addrSheet = document.getElementById('addrSheet');
+  const smartEntry = document.getElementById('smartEntry');
+  const smartPanel = document.getElementById('smartPanel');
+  const smartCollapse = document.getElementById('smartCollapse');
+  const smartInput = document.getElementById('smartInput');
+  const smartSubmit = document.getElementById('smartSubmit');
+
+  function expandSmart() {
+    if (smartEntry) smartEntry.style.display = 'none';
+    if (smartPanel) smartPanel.classList.add('open');
+    if (addrSheet) addrSheet.classList.add('expanded');
+    if (smartInput) setTimeout(() => smartInput.focus(), 260);
+  }
+  function collapseSmart() {
+    if (smartPanel) smartPanel.classList.remove('open');
+    if (smartEntry) smartEntry.style.display = '';
+    if (addrSheet) addrSheet.classList.remove('expanded');
+  }
+  if (smartEntry) smartEntry.addEventListener('click', expandSmart);
+  if (smartCollapse) smartCollapse.addEventListener('click', collapseSmart);
+  if (smartSubmit) smartSubmit.addEventListener('click', () => {
+    alert('粘贴并识别（原型示意）');
+    collapseSmart();
+  });
+  document.querySelectorAll('.sp-aux').forEach(el => el.addEventListener('click', () => alert(el.dataset.rec + '（原型示意）')));
+
+  const sheetHandle = document.getElementById('asheetHandle');
+  if (sheetHandle && addrSheet) {
+    sheetHandle.addEventListener('click', () => addrSheet.classList.toggle('expanded'));
+  }
+
+  // ===== 地址簿（常用地址） =====
+  document.querySelectorAll('[data-addr-name]').forEach(item => item.addEventListener('click', () => {
+    const info = document.getElementById('deliverInfo');
+    if (info) {
+      info.textContent = item.dataset.addrName + ' ' + item.dataset.addrPhone + ' · ' + item.dataset.addrAddr;
+      info.classList.add('filled');
+      info.dataset.filled = '1';
+    }
+    back();
+  }));
+  document.querySelectorAll('[data-edit-addr]').forEach(el => el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    alert('编辑地址（原型示意）');
+  }));
+  document.querySelectorAll('[data-del-addr]').forEach(el => el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    alert('已删除该地址（原型示意）');
+  }));
+  document.querySelector('[data-add-addr]').addEventListener('click', () => {
+    alert('新增地址（原型示意）');
+  });
+
+  // 充值：金额选择
+  function updatePayBtn() {
+    const b = document.getElementById('payBtnText');
+    if (b) b.textContent = '立即充值 ¥' + rechargeAmount.toFixed(2);
+  }
+  updatePayBtn();
+  document.querySelectorAll('.preset').forEach(p => p.addEventListener('click', () => {
+    document.querySelectorAll('.preset').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    const v = parseInt(p.dataset.val || '0', 10);
+    if (v) { rechargeAmount = v; updatePayBtn(); }
+  }));
+  const otherInput = document.getElementById('otherAmount');
+  if (otherInput) otherInput.addEventListener('input', () => {
+    const v = parseFloat(otherInput.value) || 0;
+    if (v) { rechargeAmount = v; updatePayBtn(); }
+  });
+
+  // 立即充值 → 结果页带出金额
+  document.querySelectorAll('[data-recharge]').forEach(el => el.addEventListener('click', () => {
+    const r = document.getElementById('resultAmount');
+    if (r) r.textContent = '+¥' + rechargeAmount.toFixed(2);
+    go('recharge-ok');
+  }));
+
+  // 余额提醒设置：开关 / 单选
+  document.querySelectorAll('.toggle').forEach(t => t.addEventListener('click', () => t.classList.toggle('off')));
+  document.querySelectorAll('.opt').forEach(o => o.addEventListener('click', () => {
+    const list = o.parentElement;
+    list.querySelectorAll('.opt').forEach(x => x.classList.remove('sel'));
+    o.classList.add('sel');
+  }));
+
+  // chips：类型 / 指标筛选（选中态）
+  document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+    const box = c.parentElement;
+    box.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+  }));
+
+  // 退出登录
+  document.querySelectorAll('[data-logout]').forEach(el =>
+    el.addEventListener('click', () => alert('已退出登录（原型示意）')));
+
+  // ===== 发货门店：列表 → 编辑 / 新增 =====
+  // 经营品类：点击弹窗选择
+  const catMask = document.getElementById('catMask');
+  let catTarget = 'add';
+  function setCatText(prefix, name) {
+    const el = document.getElementById(prefix + 'Cat');
+    if (!el) return;
+    el.textContent = name || '请选择经营品类';
+    el.dataset.value = name || '';
+    el.style.color = name ? '' : '#9ca3af';
+  }
+  document.querySelectorAll('[data-open-cat]').forEach(el => el.addEventListener('click', () => {
+    catTarget = el.dataset.openCat;
+    catMask.classList.add('open');
+  }));
+  document.getElementById('catClose').addEventListener('click', () => catMask.classList.remove('open'));
+  catMask.addEventListener('click', (e) => { if (e.target === catMask) catMask.classList.remove('open'); });
+  document.querySelectorAll('.cat-item').forEach(item => item.addEventListener('click', () => {
+    setCatText(catTarget, item.dataset.cat);
+    catMask.classList.remove('open');
+  }));
+  setCatText('add', '');
+  setCatText('edit', '');
+
+  // 点击门店 → 带入数据进编辑页
+  document.querySelectorAll('[data-edit-store]').forEach(el => {
+    el.addEventListener('click', () => {
+      const d = el.dataset;
+      const set = (id, v) => { const n = document.getElementById(id); if (n) n.value = v; };
+      set('editName', d.name);
+      set('editContact', d.contact);
+      set('editPhone', d.phone);
+      set('editDetail', d.addr);
+      setCatText('edit', d.cat);
+      go('store-edit');
+    });
+  });
+
+  // 复制门店编号
+  document.querySelectorAll('.smi-copy').forEach(el => el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const val = el.dataset.copy || '';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(val).catch(() => {});
+    }
+    alert('门店编号已复制');
+  }));
+
+  // 新增门店按钮 → 清空表单后进入
+  const addStoreBtn = document.getElementById('addStoreBtn');
+  if (addStoreBtn) addStoreBtn.addEventListener('click', () => {
+    ['addName', 'addContact', 'addPhone', 'addDetail'].forEach(id => { const n = document.getElementById(id); if (n) n.value = ''; });
+    setCatText('add', '');
+    go('store-add');
+  });
+
+  // 必填校验 + 保存（原型示意）
+  function validateStore(prefix) {
+    const fields = [['Name', '门店名称'], ['Contact', '联系人姓名'], ['Phone', '联系人电话'], ['Detail', '门牌号']];
+    for (const [key, label] of fields) {
+      const el = document.getElementById(prefix + key);
+      if (!el || !el.value.trim()) { alert('请填写' + label); return false; }
+    }
+    const cat = document.getElementById(prefix + 'Cat');
+    if (!cat || !cat.dataset.value) { alert('请选择经营品类'); return false; }
+    return true;
+  }
+
+  document.querySelectorAll('[data-save-add]').forEach(el => el.addEventListener('click', () => {
+    if (!validateStore('add')) return;
+    alert('门店创建成功（原型示意）');
+    back();
+  }));
+
+  document.querySelectorAll('[data-save-edit]').forEach(el => el.addEventListener('click', () => {
+    if (!validateStore('edit')) return;
+    alert('门店信息已保存（原型示意）');
+    back();
+  }));
+
+  // ===== 订单管理（首页 · 复用参考图订单页）=====
+  function renderOrders() {
+    const active = document.querySelector('#orderTabs .chip.active');
+    const st = active ? active.dataset.orderStatus : 'new';
+    let shown = 0;
+    document.querySelectorAll('#pg-home .order-card').forEach(card => {
+      const show = card.dataset.status === st;
+      card.style.display = show ? '' : 'none';
+      if (show) shown++;
+    });
+    const empty = document.getElementById('orderEmpty');
+    if (empty) empty.style.display = shown ? 'none' : 'block';
+    const end = document.getElementById('orderEnd');
+    if (end) end.style.display = shown ? '' : 'none';
+  }
+  document.querySelectorAll('#orderTabs .chip').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('#orderTabs .chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    renderOrders();
+  }));
+  renderOrders();
+
+  // 订单卡片 → 订单详情
+  document.querySelectorAll('#pg-home .order-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const d = card.dataset;
+      const set = (id, txt) => { const n = document.getElementById(id); if (n) n.textContent = txt; };
+      set('odAddr', d.addr);
+      set('odStore', d.store);
+      set('odStorePhone', d.storePhone);
+      set('odName', d.name);
+      set('odPhone', d.phone);
+      set('odGoods', d.goods);
+      set('odSerial', d.serial);
+      set('odTime', d.ordered);
+      set('odExpect', d.expect);
+      set('odStatusText', d.statusText);
+      // 已取消 / 已完成不显示「取消配送」
+      const cancel = document.getElementById('odCancel');
+      if (cancel) cancel.style.display = (d.status === 'exception' || d.status === 'done') ? 'none' : '';
+      go('order-detail');
+    });
+  });
+
+  // 订单操作按钮（原型示意，不进入详情）
+  document.querySelectorAll('#pg-home .order-btn').forEach(b => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    alert(b.textContent.trim() + '（原型示意）');
+  }));
+
+  // 拨打按钮（原型示意，不进入详情）
+  document.querySelectorAll('#pg-home .oc-call').forEach(b => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    alert('拨打收件人电话（原型示意）');
+  }));
+
+  // 首页搜索 / 筛选（原型示意）
+  [['data-search', '搜索订单（原型示意）'], ['data-filter', '筛选订单（原型示意）']].forEach(([attr, msg]) => {
+    document.querySelectorAll(`#pg-home [${attr}]`).forEach(el => el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      alert(msg);
+    }));
+  });
+
+  // 订单详情操作（复制 / 查看 / 取消配送，原型示意）
+  [['odCopy', '已复制订单编号'], ['odStatusView', '查看配送情况（原型示意）'], ['odLogView', '查看操作记录（原型示意）']].forEach(([id, msg]) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', () => alert(msg));
+  });
+  const odCancelBtn = document.getElementById('odCancel');
+  if (odCancelBtn) odCancelBtn.addEventListener('click', () => alert('取消配送（原型示意）'));
+
+  // 商品信息默认折叠，点击展开/收起
+  const odGoodsHead = document.getElementById('odGoodsHead');
+  const odGoodsBody = document.getElementById('odGoods');
+  if (odGoodsHead && odGoodsBody) {
+    odGoodsHead.addEventListener('click', () => {
+      const open = odGoodsHead.classList.toggle('open');
+      odGoodsBody.style.display = open ? '' : 'none';
+    });
+  }
+
+  // ===== 钱包账单：时间筛选 + 汇总统计 + 按天聚合 =====
+  const WF_TODAY = '2026-10-27';
+  const WF_RECORDS = [
+    { date:'2026-10-27', time:'12:30', type:'配送费', title:'订单配送费', amount: -18.50, serial:'T202610271230001', orderNo:'H1101375182879513341952' },
+    { date:'2026-10-27', time:'12:30', type:'违约金', title:'订单违约金', amount: -3.00, serial:'T202610271230002', orderNo:'H1101375182879513341952' },
+    { date:'2026-10-27', time:'09:41', type:'充值', title:'充值', amount: 1000.00 },
+    { date:'2026-10-26', time:'15:12', type:'配送费', title:'订单配送费', amount: -26.00, serial:'T202610261512001', orderNo:'H1101375182879513341963' },
+    { date:'2026-10-26', time:'11:02', type:'退款', title:'订单取消退款', amount: 2.00 },
+    { date:'2026-10-25', time:'14:20', type:'配送费', title:'订单配送费', amount: -8.88, serial:'T202610251420001', orderNo:'H1101375182879513341922' },
+    { date:'2026-10-25', time:'10:05', type:'退款', title:'订单取消退款', amount: 5.76 },
+    { date:'2026-10-24', time:'16:40', type:'充值', title:'充值', amount: 200.00 },
+    { date:'2026-10-22', time:'11:30', type:'违约金', title:'订单违约金', amount: -15.00, serial:'T202610221130001', orderNo:'H1101375182879513341985' },
+    { date:'2026-10-21', time:'09:00', type:'充值', title:'充值', amount: 300.00 },
+  ];
+  const WF_TAG = { '充值':'tag-charge', '退款':'tag-refund', '配送费':'tag-delivery', '违约金':'tag-penalty' };
+  const wfShift = (base, delta) => {
+    const p = n => String(n).padStart(2, '0');
+    const parts = base.split('-').map(Number);
+    const dt = new Date(parts[0], parts[1] - 1, parts[2] + delta);
+    return dt.getFullYear() + '-' + p(dt.getMonth() + 1) + '-' + p(dt.getDate());
+  };
+  const wfFmt = n => '¥' + Math.abs(n).toFixed(2);
+
+  function renderRechargeRecords() {
+    const active = document.querySelector('#wfRange .chip.active');
+    const range = active ? active.dataset.range : 'week';
+    const custom = document.getElementById('wfCustom');
+    if (custom) custom.style.display = range === 'custom' ? 'flex' : 'none';
+
+    const sEl = document.getElementById('wfStart');
+    const eEl = document.getElementById('wfEnd');
+    const start = sEl ? sEl.value : '';
+    const end = eEl ? eEl.value : '';
+
+    const inRange = d => {
+      if (range === 'today') return d === WF_TODAY;
+      if (range === 'yesterday') return d === wfShift(WF_TODAY, -1);
+      if (range === 'week') return d >= wfShift(WF_TODAY, -6) && d <= WF_TODAY;
+      if (range === 'month') return d.slice(0, 7) === WF_TODAY.slice(0, 7);
+      if (range === 'custom') return (!start || d >= start) && (!end || d <= end);
+      return false;
+    };
+
+    const list = WF_RECORDS.filter(r => r.type === '充值' && inRange(r.date));
+
+    const box = document.getElementById('wfDays');
+    const empty = document.getElementById('wfEmpty');
+    if (!list.length) {
+      box.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    box.innerHTML = '<div class="wf-day">' + list.map(r => {
+      return '<div class="wf-item">' +
+        '<div class="wf-main">' +
+          '<div class="wf-title">' + r.title + '</div>' +
+          '<div class="wf-meta">' + r.date + ' ' + r.time + '</div>' +
+        '</div>' +
+        '<span class="wf-amt in">+¥' + Math.abs(r.amount) + '</span>' +
+      '</div>';
+    }).join('') + '</div>';
+  }
+
+  document.querySelectorAll('#wfRange .chip').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('#wfRange .chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    renderRechargeRecords();
+  }));
+  ['wfStart', 'wfEnd'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', renderRechargeRecords);
+  });
+
+  renderRechargeRecords();
+
+  // 配送交易记录 tab：仅配送费 / 违约金，金额为负，保留两位小数
+  function renderDeliveryRecords() {
+    const active = document.querySelector('#wfDeliveryRange .chip.active');
+    const range = active ? active.dataset.range : 'week';
+    const custom = document.getElementById('wfDeliveryCustom');
+    if (custom) custom.style.display = range === 'custom' ? 'flex' : 'none';
+
+    const sEl = document.getElementById('wfDeliveryStart');
+    const eEl = document.getElementById('wfDeliveryEnd');
+    const start = sEl ? sEl.value : '';
+    const end = eEl ? eEl.value : '';
+
+    const inRange = d => {
+      if (range === 'today') return d === WF_TODAY;
+      if (range === 'yesterday') return d === wfShift(WF_TODAY, -1);
+      if (range === 'week') return d >= wfShift(WF_TODAY, -6) && d <= WF_TODAY;
+      if (range === 'month') return d.slice(0, 7) === WF_TODAY.slice(0, 7);
+      if (range === 'custom') return (!start || d >= start) && (!end || d <= end);
+      return false;
+    };
+
+    const list = WF_RECORDS.filter(r => (r.type === '配送费' || r.type === '违约金') && inRange(r.date));
+    const expense = list.filter(r => r.amount < 0).reduce((s, r) => s + r.amount, 0);
+    document.getElementById('wfDeliveryCount').textContent = list.length;
+    document.getElementById('wfDeliveryExpense').textContent = wfFmt(expense);
+
+    const days = {};
+    list.forEach(r => { (days[r.date] = days[r.date] || []).push(r); });
+    const keys = Object.keys(days).sort().reverse();
+
+    const box = document.getElementById('wfDeliveryDays');
+    const empty = document.getElementById('wfDeliveryEmpty');
+    if (!keys.length) {
+      box.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    const flat = [];
+    box.innerHTML = keys.map(date => {
+      const items = days[date];
+      const exp = items.reduce((s, r) => s + r.amount, 0);
+      const rows = items.map(r => {
+        flat.push(r);
+        return '<div class="wf-item tx-click">' +
+          '<div class="wf-main">' +
+            '<div class="wf-title">' + r.title + '</div>' +
+            '<div class="wf-meta">' + r.time + '</div>' +
+          '</div>' +
+          '<span class="wf-amt out">-¥' + Math.abs(r.amount).toFixed(2) + '</span>' +
+        '</div>';
+      }).join('');
+      return '<div class="wf-day">' +
+        '<div class="wf-day-head open">' +
+          '<span class="wf-date">' + date + '</span>' +
+          '<span class="wf-sub"><span class="wf-exp">支出:' + wfFmt(exp) + '</span></span>' +
+          '<span class="wf-arrow">▾</span>' +
+        '</div>' +
+        '<div class="wf-day-body">' + rows + '</div>' +
+      '</div>';
+    }).join('');
+
+    box.querySelectorAll('.wf-day-head').forEach(h => h.addEventListener('click', () => {
+      const body = h.parentElement.querySelector('.wf-day-body');
+      const open = h.classList.toggle('open');
+      body.style.display = open ? '' : 'none';
+    }));
+
+    box.querySelectorAll('.tx-click').forEach((el, i) => {
+      const r = flat[i];
+      if (!r) return;
+      el.addEventListener('click', () => openTxDetail(r));
+    });
+  }
+
+  function openTxDetail(r) {
+    const sign = r.amount < 0 ? '-' : '+';
+    document.getElementById('txdAmount').textContent = sign + '¥' + Math.abs(r.amount).toFixed(2);
+    const tag = document.getElementById('txdTypeTag');
+    tag.className = 'tag ' + (WF_TAG[r.type] || 'tag-delivery');
+    tag.textContent = r.type;
+    document.getElementById('txdTime').textContent = r.date + ' ' + r.time + ':00';
+    document.getElementById('txdType').textContent = r.type;
+    document.getElementById('txdSerial').textContent = r.serial || '—';
+    document.getElementById('txdOrderNo').textContent = r.orderNo || '—';
+    go('tx-detail');
+  }
+
+  document.querySelectorAll('#wfDeliveryRange .chip').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('#wfDeliveryRange .chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    renderDeliveryRecords();
+  }));
+  ['wfDeliveryStart', 'wfDeliveryEnd'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', renderDeliveryRecords);
+  });
+
+  // 充值记录 / 配送交易记录 tab 切换
+  document.querySelectorAll('#wfTabs .tab-item').forEach(t => t.addEventListener('click', () => {
+    document.querySelectorAll('#wfTabs .tab-item').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const tab = t.dataset.wftab;
+    document.getElementById('wfBillPane').style.display = tab === 'recharge' ? '' : 'none';
+    document.getElementById('wfDeliveryPane').style.display = tab === 'delivery' ? '' : 'none';
+  }));
+
+  renderDeliveryRecords();
+
+  render();
+})();
+</script>
+</body>
+</html>
