@@ -37,7 +37,7 @@
   /* 页面系统 */
   .page { position:absolute; inset:0; background:var(--bg); overflow-y:auto; display:none; }
   .page.active { display:block; }
-  .page.tab-page { padding-bottom:72px; }
+  .page.tab-page { padding-bottom:90px; }
 
   /* 状态栏 / 导航栏 / 胶囊 */
   .statusbar {
@@ -81,14 +81,18 @@
   .wx-btn { display:flex; align-items:center; justify-content:center; gap:8px; background:#07C160; color:#fff; border-radius:999px; padding:13px 0; font-size:16px; font-weight:600; cursor:pointer; }
   .wx-btn:active { opacity:0.85; }
 
-  /* 底部 TabBar */
+  /* 底部导航栏：纯白矩形长条 + 中央蓝球骑在顶边 */
   .tabbar {
-    position:absolute; left:0; right:0; bottom:0; height:56px; background:#fff;
-    border-top:1px solid var(--border); display:none; z-index:20;
+    position:absolute; left:0; right:0; bottom:0;
+    height:calc(56px + env(safe-area-inset-bottom, 0px));
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+    background:#fff;
+    display:none; z-index:20;
   }
   .tab {
-    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:4px; font-size:14px; color:var(--text3); cursor:pointer;
+    flex:1; position:relative; z-index:2;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:4px; font-size:11px; color:var(--text3); cursor:pointer;
   }
   .tab svg { width:24px; height:24px; }
   .tab.active { color:var(--primary); }
@@ -320,7 +324,7 @@
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(16,24,40,0.03);
   }
-  .send-card .row { display:flex; align-items:center; gap:12px; padding:0 16px; height:60px; }
+  .send-card .row { display:flex; align-items:center; gap:12px; padding:0 16px; height:52px; }
   .send-card .row + .row { border-top:1px solid #F3F4F6; }
   .send-card .row.addr-linked { border-top:none; }
   .send-card .row.clickable { cursor:pointer; transition:background .15s; }
@@ -329,7 +333,7 @@
   /* 地址核心区：绿 / 蓝线性点标 + 连接线 */
   .addr-dot { position:relative; flex:none; width:18px; height:18px; border-radius:50%; box-sizing:border-box; }
   .addr-dot.pickup { background:#fff; box-shadow: inset 0 0 0 2.5px var(--success); }
-  .addr-dot.pickup::after { content:''; position:absolute; left:50%; top:100%; transform:translateX(-50%); width:2px; height:42px; background:#D4DAE2; }
+  .addr-dot.pickup::after { content:''; position:absolute; left:50%; top:100%; transform:translateX(-50%); width:2px; height:34px; background:#D4DAE2; }
   .addr-dot.deliver { background:var(--primary); }
   .addr-dot.deliver::before { content:''; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:6px; height:6px; border-radius:50%; background:#fff; }
   .addr-text { flex:1; min-width:0; font-size:16px; font-weight:500; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -407,12 +411,11 @@
   .sf-switch.on::after { left:22px; }
 
   /* 首页下单页（图1） */
-  .map-area { position:relative; height:98px; margin-top:0; border-radius:18px; overflow:hidden; background:linear-gradient(160deg,#eef4fb 0%,#e4edf7 48%,#dce8f3 100%); border:1px solid var(--border); }
-  .map-area::before { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(37,99,235,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,0.035) 1px,transparent 1px); background-size:40px 40px; }
-  .map-pin { position:absolute; left:50%; top:56%; transform:translate(-50%,-100%); display:flex; flex-direction:column; align-items:center; }
-  .map-pin .pin-tag { margin-top:4px; background:#fff; border:none; border-radius:6px; padding:3px 10px; font-size:12px; font-weight:600; color:var(--text); box-shadow:0 2px 6px rgba(16,24,40,0.08); white-space:nowrap; }
-  .map-hint { position:absolute; left:10px; bottom:8px; display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.92); border-radius:999px; padding:5px 11px; font-size:12px; color:var(--text2); box-shadow:0 2px 6px rgba(16,24,40,0.06); }
-  .map-hint::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--success); flex:none; }
+  .map-area { position:relative; height:120px; margin-top:0; border-radius:18px 18px 28px 28px; overflow:hidden; background:linear-gradient(160deg,#e9f0fa 0%,#dee9f6 50%,#d3e2ef 100%); }
+  .map-area::before { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(37,99,235,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,0.04) 1px,transparent 1px); background-size:40px 40px; }
+  /* 复用地址页地图：点标居中、定位按钮右上角 */
+  .map-area .amap-pin { top:50%; }
+  .map-area .amap-locate { top:12px; right:12px; }
   .svc-tabs { display:flex; gap:8px; margin-top:12px; }
   .svc-tab { flex:1; text-align:center; padding:9px 0; background:#fff; border:1px solid var(--border); border-radius:10px; font-size:13px; color:var(--text2); cursor:pointer; }
   .svc-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); font-weight:600; }
@@ -425,13 +428,34 @@
   .discount .d-title { font-size:13px; font-weight:600; color:#c2410c; }
   .discount .d-sub { font-size:11px; color:var(--text2); margin-top:2px; }
   .discount .d-btn { flex:none; background:#f97316; color:#fff; font-size:12px; padding:6px 13px; border-radius:999px; cursor:pointer; }
-  .provider-head { display:flex; align-items:center; justify-content:space-between; margin-top:14px; }
-  .provider-head .ph-title { font-size:13px; font-weight:600; }
-  .provider-head .ph-sub { font-size:11px; color:var(--text3); }
-  .provider-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:10px; }
-  .provider { display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 6px; background:#fff; border:1px solid var(--border); border-radius:10px; cursor:pointer; }
-  .provider .pv-logo { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; }
-  .provider .pv-name { font-size:11px; color:var(--text); }
+  /* 运力列表（发单页：单框收纳，极细浅灰线分隔） */
+  .carrier-list { background:var(--card); border:1px solid #EEF1F4; border-radius:16px; overflow:hidden; margin-top:14px; }
+  .carrier-item { display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid #F3F4F6; cursor:pointer; transition:background .15s; }
+  .carrier-item:last-child { border-bottom:none; }
+  .carrier-item .cv-logo { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex:none; }
+  .carrier-item .cv-name { flex:1; min-width:0; font-size:15px; font-weight:500; color:var(--text); }
+  .carrier-item .cv-price { flex:none; font-size:18px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
+  .carrier-item .cv-price .cny { font-size:13px; font-weight:600; margin-right:1px; }
+  .carrier-item .cv-radio { flex:none; width:20px; height:20px; border-radius:50%; border:2px solid #D1D5DB; box-sizing:border-box; position:relative; }
+  .carrier-item.selected { background:#F5F8FF; }
+  .carrier-item.selected .cv-radio { border-color:var(--primary); background:var(--primary); }
+  .carrier-item.selected .cv-radio::after { content:''; position:absolute; left:50%; top:50%; width:5px; height:9px; border:solid #fff; border-width:0 2px 2px 0; transform:translate(-50%,-60%) rotate(45deg); }
+  .carrier-item.hidden { display:none; }
+  /* 价格筛选滑动条（类似打车，两端区间） */
+  .price-filter { margin-top:14px; }
+  .price-filter .pf-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+  .price-filter .pf-title { font-size:14px; font-weight:600; color:var(--text); }
+  .price-filter .pf-value { font-size:13px; color:var(--primary); font-weight:600; font-variant-numeric:tabular-nums; }
+  .range-slider { position:relative; height:24px; }
+  .range-slider .rs-track { position:absolute; left:0; right:0; top:9px; height:6px; border-radius:3px; background:#E5E7EB; }
+  .range-slider .rs-fill { position:absolute; top:9px; height:6px; border-radius:3px; background:var(--primary); }
+  .range-slider input[type=range] { position:absolute; left:0; right:0; top:0; width:100%; height:24px; margin:0; -webkit-appearance:none; appearance:none; background:transparent; pointer-events:none; outline:none; }
+  .range-slider input[type=range]::-webkit-slider-runnable-track { height:6px; background:transparent; }
+  .range-slider input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:#fff; border:2px solid var(--primary); box-shadow:0 1px 4px rgba(0,0,0,0.15); cursor:pointer; pointer-events:auto; margin-top:-8px; }
+  .range-slider input[type=range]::-moz-range-track { height:6px; background:transparent; }
+  .range-slider input[type=range]::-moz-range-thumb { width:22px; height:22px; border-radius:50%; background:#fff; border:2px solid var(--primary); cursor:pointer; pointer-events:auto; }
+  #priceMin { z-index:3; }
+  #priceMax { z-index:4; }
 
   /* 填写取送信息（图2） */
   .rec-title { font-size:11px; color:var(--text3); margin:14px 0 8px; }
@@ -506,6 +530,17 @@
   .drawer-foot { display:flex; gap:10px; margin-top:18px; }
   .drawer-btn { flex:1; text-align:center; padding:12px 0; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; background:#f1f5f9; color:var(--text); }
   .drawer-btn.primary { background:var(--primary); color:#fff; }
+  /* 余额不足支付弹窗 */
+  .pay-amount { text-align:center; padding:16px 0 10px; }
+  .pay-amount .pay-lbl { font-size:13px; color:var(--text2); display:block; }
+  .pay-amount .pay-num { font-size:36px; font-weight:700; margin-top:8px; font-variant-numeric:tabular-nums; }
+  .pay-amount .pay-num .cny { font-size:20px; font-weight:600; margin-right:2px; }
+  /* 居中弹窗 */
+  .modal-mask { position:absolute; inset:0; z-index:60; background:rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; }
+  .modal-mask.open { display:flex; }
+  .modal { width:300px; max-width:86%; background:#fff; border-radius:16px; padding:20px 20px 16px; text-align:center; animation:popIn .18s ease; }
+  @keyframes popIn { from { opacity:0; transform:scale(.94); } to { opacity:1; transform:scale(1); } }
+  .modal-title { font-size:16px; font-weight:600; color:var(--text); }
   .tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:500; white-space:nowrap; vertical-align:1px; }
   .tag-freeze { background:#f3f4f6; color:#6b7280; }
   .tag-unfreeze { background:#f3f4f6; color:#9ca3af; }
@@ -692,27 +727,27 @@
   .wf-tabs .tab-item.active { color: var(--text); font-weight: 600; }
   .wf-tabs .tab-item.active::after { content: ""; position: absolute; left: 28%; right: 28%; bottom: -1px; height: 2px; background: var(--primary); border-radius: 2px; }
 
-  /* 方案1：下单居中凸起主按钮 */
-  .tabbar.center-bar { height:62px; }
-  .tab-center { flex:1; display:flex; align-items:center; justify-content:center; }
+  /* 中央发单按钮：蓝球骑在白色底栏顶边线上 */
+  .tab-center { flex:1; position:relative; z-index:3; display:flex; align-items:center; justify-content:center; }
   .center-btn {
-    position:relative; top:-20px;
-    display:inline-flex; align-items:center; gap:4px;
-    padding:11px 20px; border-radius:999px;
-    background:var(--primary); color:#fff;
-    font-size:14px; font-weight:600;
-    box-shadow:0 8px 18px rgba(37,99,235,0.4);
-    border:3px solid #fff; cursor:pointer;
+    position:absolute; left:50%; top:-16px;
+    transform:translateX(-50%);
+    width:54px; height:54px; border-radius:50%;
+    background:linear-gradient(180deg, #4A90F9 0%, #2563EB 50%, #1D4ED8 100%);
+    color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:700;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 12px rgba(37,99,235,0.20);
+    cursor:pointer; z-index:4;
   }
-  .center-btn svg { width:18px; height:18px; }
   /* 下单页：纵向 Flex 布局（主内容滚动 + 底部 CTA 绝对吸底，适配多屏高） */
-  #pg-send.active { display:flex; flex-direction:column; overflow:hidden; padding-bottom:62px; }
+  #pg-send.active { display:flex; flex-direction:column; overflow:hidden; padding-bottom:60px; }
   #pg-send .statusbar, #pg-send .navbar { flex:none; }
   #pg-send .navbar { font-size:20px; font-weight:600; }
   #pg-send .content { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px 16px 16px; }
   /* 吸底 CTA：紧贴底部导航栏，上方浅灰渐隐让滚动内容自然过渡，按钮绝不悬空 */
-  #pg-send .store-footer { position:static; flex:none; padding:12px 16px 12px; background:linear-gradient(180deg, rgba(247,248,250,0) 0%, var(--bg) 14px); border-top:none; }
-  #pg-send .store-submit { height:54px; border-radius:18px; font-size:17px; font-weight:600; letter-spacing:2px; box-shadow:0 4px 14px rgba(37,99,235,0.18); }
+  #pg-send .store-footer { position:static; flex:none; padding:14px 16px 12px; background:linear-gradient(180deg, rgba(247,248,250,0) 0%, var(--bg) 14px); border-top:none; }
+  #pg-send .store-submit { height:56px; border-radius:16px; background:linear-gradient(180deg, rgba(74,144,249,0.95) 0%, rgba(37,99,235,0.95) 100%); font-size:17px; font-weight:600; letter-spacing:2px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.25), 0 8px 20px rgba(37,99,235,0.28); }
 
   /* 充值页：底部固定「立即充值」栏 */
   #pg-recharge.active { display:flex; flex-direction:column; overflow:hidden; }
@@ -778,8 +813,8 @@
     .app { width: 100%; height: 100vh; height: 100dvh; margin: 0; border-radius: 0; box-shadow: none; }
     .home-indicator { display: none; }
     .statusbar { height: calc(40px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); }
-    .tabbar.center-bar { height: calc(62px + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
-    .page.tab-page { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+    .tabbar { height: calc(56px + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
+    .page.tab-page { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
   }
 </style>
 </head>
@@ -798,11 +833,11 @@
     </div>
     <div class="content">
       <div class="map-area">
-        <div class="map-pin">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="#2563eb" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3" fill="#fff" stroke="none"/></svg>
-          <span class="pin-tag">多宝路63号</span>
+        <div class="amap-pin">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="#2563eb" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3" fill="#fff" stroke="none"/></svg>
+          <span class="amap-tag">多宝路63号</span>
         </div>
-        <span class="map-hint">预计1分钟内接单</span>
+        <div class="amap-locate" title="定位"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
       </div>
 
       <div class="send-card">
@@ -834,22 +869,53 @@
         </div>
       </div>
 
-      <!-- 8家品牌可选（暂时注释）
-      <div class="provider-head">
-        <span class="ph-title">8家品牌可选</span>
-        <span class="ph-sub">填写地址后查看价格与优惠</span>
+      <!-- 价格筛选滑动条（类似打车，两端区间） -->
+      <div class="price-filter">
+        <div class="pf-head">
+          <span class="pf-title">已选<span id="selCount">1</span>个运力</span>
+          <span class="pf-value">预计<span id="pfMinV">10.5</span>-<span id="pfMaxV">13.8</span>元</span>
+        </div>
+        <div class="range-slider">
+          <div class="rs-track"></div>
+          <div class="rs-fill" id="rsFill"></div>
+          <input type="range" id="priceMin" min="10.5" max="13.8" step="0.1" value="10.5">
+          <input type="range" id="priceMax" min="10.5" max="13.8" step="0.1" value="13.8">
+        </div>
       </div>
-      <div class="provider-grid">
-        <div class="provider"><span class="pv-logo" style="background:#e8f0ff">🚚</span><span class="pv-name">顺丰同城</span></div>
-        <div class="provider"><span class="pv-logo" style="background:#eef7ee">🛵</span><span class="pv-name">哈啰送货</span></div>
-        <div class="provider"><span class="pv-logo" style="background:#fff1e8">🛵</span><span class="pv-name">美团跑腿</span></div>
-        <div class="provider"><span class="pv-logo" style="background:#f0f0f5">🚗</span><span class="pv-name">闪送</span></div>
-        <div class="provider"><span class="pv-logo" style="background:#e8f4f8">📦</span><span class="pv-name">达达快送</span></div>
-        <div class="provider"><span class="pv-logo" style="background:#fdf2f2">🏍</span><span class="pv-name">UU跑腿</span></div>
-        <div class="provider"><span class="pv-logo" style="background:#f3f0ff">🛵</span><span class="pv-name">蜂鸟即配</span></div>
-        <div class="provider"><span class="pv-logo" style="background:#eefbf0">🚚</span><span class="pv-name">点我达</span></div>
+
+      <!-- 运力列表：按价格由低到高 -->
+      <div class="carrier-list">
+        <div class="carrier-item selected" data-price="10.5">
+          <span class="cv-logo" style="background:#e8f4f8">📦</span>
+          <span class="cv-name">达达快送</span>
+          <span class="cv-price"><span class="cny">¥</span>10.5</span>
+          <span class="cv-radio"></span>
+        </div>
+        <div class="carrier-item" data-price="11.0">
+          <span class="cv-logo" style="background:#eef7ee">🛵</span>
+          <span class="cv-name">蜂鸟</span>
+          <span class="cv-price"><span class="cny">¥</span>11.0</span>
+          <span class="cv-radio"></span>
+        </div>
+        <div class="carrier-item" data-price="12.0">
+          <span class="cv-logo" style="background:#fdf2f2">🏍</span>
+          <span class="cv-name">UU跑腿</span>
+          <span class="cv-price"><span class="cny">¥</span>12.0</span>
+          <span class="cv-radio"></span>
+        </div>
+        <div class="carrier-item" data-price="12.5">
+          <span class="cv-logo" style="background:#e8f0ff">🚚</span>
+          <span class="cv-name">顺丰同城</span>
+          <span class="cv-price"><span class="cny">¥</span>12.5</span>
+          <span class="cv-radio"></span>
+        </div>
+        <div class="carrier-item" data-price="13.8">
+          <span class="cv-logo" style="background:#f0f0f5">🚗</span>
+          <span class="cv-name">闪送</span>
+          <span class="cv-price"><span class="cny">¥</span>13.8</span>
+          <span class="cv-radio"></span>
+        </div>
       </div>
-      -->
     </div>
     <div class="store-footer">
       <div class="store-submit" data-send>呼叫骑手</div>
@@ -942,12 +1008,12 @@
         <!-- 地址表单 -->
         <div class="aform">
           <div class="af-row">
-            <span class="af-label">所在地区<span class="req">*</span></span>
+            <span class="af-label">地址<span class="req">*</span></span>
             <span class="af-value" id="locAddr">海珠区昌岗街道碧乐时光(海珠昌岗店)</span>
             <span class="af-chevron">›</span>
           </div>
           <div class="af-row">
-            <span class="af-label">详细地址与门牌号<span class="req">*</span></span>
+            <span class="af-label">门牌号<span class="req">*</span></span>
             <input class="af-input" type="text" id="pickNo" placeholder="街道、小区、楼栋、门牌号" value="1">
           </div>
           <div class="af-row">
@@ -1406,7 +1472,7 @@
     </div>
     <div class="content">
       <div class="balance-card">
-        <div class="bl-label">可用余额（元）<span class="eye">👁</span></div>
+        <div class="bl-label">可用余额（元）</div>
         <div class="bl-amount"><span class="cny">¥</span>12,580.50</div>
         <div class="bl-actions">
           <div class="bl-btn primary" data-go="recharge">充值</div>
@@ -1790,16 +1856,13 @@
   </section>
 
   <!-- ============ TabBar（方案1：下单居中凸起） ============ -->
-  <nav class="tabbar center-bar">
+  <nav class="tabbar">
     <div class="tab active" data-tab="home">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
       订单
     </div>
     <div class="tab-center" data-tab="send">
-      <span class="center-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-        下单
-      </span>
+      <span class="center-btn">发单</span>
     </div>
     <div class="tab" data-tab="mine">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 21c0-4 3-6 7-6s7 2 7 6"/></svg>
@@ -1904,6 +1967,35 @@
     </div>
   </div>
 
+  <!-- 余额不足支付弹窗（居中） -->
+  <div class="modal-mask" id="payMask">
+    <div class="modal">
+      <div class="modal-title">余额不足</div>
+      <div class="pay-amount">
+        <span class="pay-lbl">本次需支付</span>
+        <div class="pay-num"><span class="cny">¥</span>15.00</div>
+      </div>
+      <div class="drawer-foot">
+        <div class="drawer-btn" id="payRecharge">去充值</div>
+        <div class="drawer-btn primary" id="payNow">立即支付</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 微信支付收银台（原型示意，居中） -->
+  <div class="modal-mask" id="wxpayMask">
+    <div class="modal">
+      <div class="modal-title">微信支付</div>
+      <div class="pay-amount">
+        <span class="pay-lbl">支付金额</span>
+        <div class="pay-num"><span class="cny">¥</span>15.00</div>
+      </div>
+      <div class="drawer-foot">
+        <div class="drawer-btn primary" id="wxpayConfirm">确认支付</div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -1936,8 +2028,70 @@
   document.querySelectorAll('[data-back]').forEach(el =>
     el.addEventListener('click', (e) => { e.stopPropagation(); back(); }));
 
-  // ===== 首页下单（图1） =====
-  document.querySelector('[data-send]').addEventListener('click', () => alert('已呼叫骑手（原型示意）'));
+  // ===== 首页呼叫骑手：余额不足弹窗 =====
+  const payMask = document.getElementById('payMask');
+  const wxpayMask = document.getElementById('wxpayMask');
+  document.querySelector('[data-send]').addEventListener('click', () => payMask.classList.add('open'));
+  payMask.addEventListener('click', (e) => { if (e.target === payMask) payMask.classList.remove('open'); });
+  // 去充值：跳转钱包充值页
+  document.getElementById('payRecharge').addEventListener('click', () => {
+    payMask.classList.remove('open');
+    go('recharge');
+  });
+  // 立即支付：当前页唤出微信支付收银台
+  document.getElementById('payNow').addEventListener('click', () => {
+    payMask.classList.remove('open');
+    wxpayMask.classList.add('open');
+  });
+  wxpayMask.addEventListener('click', (e) => { if (e.target === wxpayMask) wxpayMask.classList.remove('open'); });
+  document.getElementById('wxpayConfirm').addEventListener('click', () => {
+    wxpayMask.classList.remove('open');
+    alert('支付成功，已冻结发单（原型示意）');
+  });
+
+  // ===== 运力列表：多选 =====
+  const selCount = document.getElementById('selCount');
+  function updateSelCount() {
+    const n = document.querySelectorAll('#pg-send .carrier-item.selected:not(.hidden)').length;
+    selCount.textContent = n;
+  }
+  document.querySelectorAll('#pg-send .carrier-item').forEach(item => {
+    item.addEventListener('click', () => {
+      item.classList.toggle('selected');
+      updateSelCount();
+    });
+  });
+
+  // ===== 价格筛选滑动条（两端区间） =====
+  const priceMin = document.getElementById('priceMin');
+  const priceMax = document.getElementById('priceMax');
+  const pfMinV = document.getElementById('pfMinV');
+  const pfMaxV = document.getElementById('pfMaxV');
+  const rsFill = document.getElementById('rsFill');
+  function paintPrice() {
+    const lo = +priceMin.min, hi = +priceMin.max;
+    const min = +priceMin.value, max = +priceMax.value;
+    const pctMin = ((min - lo) / (hi - lo)) * 100;
+    const pctMax = ((max - lo) / (hi - lo)) * 100;
+    rsFill.style.left = pctMin + '%';
+    rsFill.style.width = (pctMax - pctMin) + '%';
+    pfMinV.textContent = min.toFixed(1);
+    pfMaxV.textContent = max.toFixed(1);
+    document.querySelectorAll('#pg-send .carrier-item').forEach(item => {
+      const price = parseFloat(item.dataset.price);
+      item.classList.toggle('hidden', price < min || price > max);
+    });
+    updateSelCount();
+  }
+  priceMin.addEventListener('input', () => {
+    if (+priceMin.value > +priceMax.value) priceMin.value = priceMax.value;
+    paintPrice();
+  });
+  priceMax.addEventListener('input', () => {
+    if (+priceMax.value < +priceMin.value) priceMax.value = priceMin.value;
+    paintPrice();
+  });
+  paintPrice();
 
   // ===== 首页下单：物品信息 / 上门时间 =====
   const goodsMask = document.getElementById('goodsMask');
